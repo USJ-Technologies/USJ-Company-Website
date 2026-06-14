@@ -50,7 +50,7 @@ const emptyForm = {
   name: '', model: '', brand_name: 'ENTER', category_name: '', description: '',
   slug: '', key_features: [], specifications: {}, in_box: [],
   primary_image_url: '', additionalImages: [], product_url: '',
-  is_active: true, is_featured: false, is_b2b: true,
+  is_active: true, is_featured: false, is_b2b: true, unit_price: '',
 };
 
 function toFormData(p) {
@@ -73,6 +73,7 @@ function toFormData(p) {
     is_active: p.is_active ?? true,
     is_featured: p.is_featured ?? false,
     is_b2b: p.is_b2b ?? true,
+    unit_price: p.unit_price != null ? String(p.unit_price) : '',
   };
 }
 
@@ -241,6 +242,22 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
                   className={inputCls}
                   placeholder="https://www.manufacturer.com/product/..."
                 />
+              </FieldRow>
+
+              <FieldRow label="Unit Price (₹)">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#718096] pointer-events-none">₹</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.unit_price}
+                    onChange={e => set('unit_price', e.target.value)}
+                    className={`${inputCls} pl-7`}
+                    placeholder="Leave blank to show 'Price on Request'"
+                  />
+                </div>
+                <p className="text-[10px] text-[#718096] mt-1">Shown on product cards and detail pages. Leave blank for B2B quote-only pricing.</p>
               </FieldRow>
             </div>
           </div>
@@ -521,6 +538,7 @@ const ProductsAdminPage = () => {
       is_active: formData.is_active,
       is_featured: formData.is_featured,
       is_b2b: formData.is_b2b,
+      unit_price: formData.unit_price !== '' && formData.unit_price != null ? parseFloat(formData.unit_price) : null,
       updated_at: new Date().toISOString(),
     };
 

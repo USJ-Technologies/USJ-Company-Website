@@ -64,10 +64,22 @@ export default function ProductCard({ product }) {
 
         <Link
           to={`/product/${product.slug}`}
-          className="text-sm font-semibold text-[#0A1628] hover:text-[#C9A84C] transition-colors line-clamp-2 leading-snug mb-3 flex-1"
+          className="text-sm font-semibold text-[#0A1628] hover:text-[#C9A84C] transition-colors line-clamp-2 leading-snug mb-2 flex-1"
         >
           {product.name}
         </Link>
+
+        {/* Price */}
+        <div className="mb-2">
+          {product.unit_price != null ? (
+            <p className="text-base font-bold text-[#0A1628]">
+              {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(product.unit_price)}
+            </p>
+          ) : (
+            <p className="text-xs text-[#718096] italic">Price on Request</p>
+          )}
+          <p className="text-[10px] font-semibold text-[#C9A84C] mt-0.5">Special bulk pricing available</p>
+        </div>
 
         {/* CTA */}
         <button

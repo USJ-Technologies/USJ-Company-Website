@@ -185,10 +185,25 @@ export default function ProductDetailPage() {
               </h1>
 
               {product.model && (
-                <p className="text-sm text-[#718096] mb-4">
+                <p className="text-sm text-[#718096] mb-3">
                   Model: <span className="font-semibold text-[#4A5568]">{product.model}</span>
                 </p>
               )}
+
+              {/* Price */}
+              <div className="mb-4 pb-4 border-b border-[#E2E8F0]">
+                {product.unit_price != null ? (
+                  <p className="text-2xl font-bold text-[#0A1628]">
+                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(product.unit_price)}
+                    <span className="text-sm font-normal text-[#718096] ml-2">per unit</span>
+                  </p>
+                ) : (
+                  <p className="text-lg font-semibold text-[#4A5568]">Price on Request</p>
+                )}
+                <p className="text-sm text-[#C9A84C] font-semibold mt-1">
+                  Special pricing available for bulk &amp; government orders
+                </p>
+              </div>
 
               {/* Description */}
               {product.description ? (
