@@ -87,5 +87,5 @@ export const ROUTES = {
   ADMIN_INQUIRIES: '/admin/inquiries',
   ADMIN_VENTURES: '/admin/ventures',
   ADMIN_CERTIFICATIONS: '/admin/certifications',
-  ADMIN_PDF_IMPORT: '/admin/pdf-import',
+  ADMIN_TEAM: '/admin/team',
 };

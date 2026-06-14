@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Target, Eye, Zap, Shield, Users, Star } from 'lucide-react';
+import { Target, Eye, Zap, Shield, Star, Linkedin } from 'lucide-react';
 import SectionHeader from '../components/ui/SectionHeader';
 import Card from '../components/ui/Card';
 import { APP_CONFIG, ROUTES } from '../config/app';
+import { supabase } from '../lib/supabase';
 
 const values = [
   { icon: Zap, title: 'Innovation', description: 'We embrace emerging technologies to deliver modern, efficient solutions that keep our clients ahead of the curve.' },
@@ -34,6 +36,19 @@ const stats = [
 ];
 
 export default function AboutPage() {
+  const [teamMembers, setTeamMembers] = useState(team);
+
+  useEffect(() => {
+    supabase
+      .from('team_members')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order')
+      .then(({ data }) => {
+        if (data?.length > 0) setTeamMembers(data);
+      });
+  }, []);
+
   return (
     <div>
       {/* Hero */}
@@ -157,19 +172,43 @@ export default function AboutPage() {
         <div className="container-max">
           <SectionHeader label="OUR TEAM" title="The People Behind USJ Technologies" align="center" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {team.map((member) => (
-              <Card key={member.name} className="p-6 text-center" hover>
-                <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-xl font-bold"
-                  style={{ backgroundColor: '#0A1628', color: '#C9A84C' }}
-                >
-                  {member.initials}
-                </div>
-                <h3 className="font-bold text-[#0A1628] mb-0.5">{member.name}</h3>
-                <p className="text-xs text-[#C9A84C] font-semibold mb-3 uppercase tracking-wide">{member.role}</p>
-                <p className="text-sm text-[#4A5568] leading-relaxed">{member.bio}</p>
-              </Card>
-            ))}
+            {teamMembers.map((member) => {
+              const initials = (member.initials ?? member.name?.split(' ').map((n) => n[0]).join('').slice(0, 2) ?? 'TM').toUpperCase();
+              return (
+                <Card key={member.id ?? member.name} className="p-6 text-center" hover>
+                  {member.image_url ? (
+                    <img
+                      src={member.image_url}
+                      alt={member.name}
+                      className="w-20 h-20 rounded-full object-cover mx-auto mb-4 border-2 border-[#E2E8F0]"
+                    />
+                  ) : (
+                    <div
+                      className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-xl font-bold"
+                      style={{ backgroundColor: '#0A1628', color: '#C9A84C' }}
+                    >
+                      {initials}
+                    </div>
+                  )}
+                  <h3 className="font-bold text-[#0A1628] mb-0.5">{member.name}</h3>
+                  <p className="text-xs text-[#C9A84C] font-semibold mb-1 uppercase tracking-wide">{member.role}</p>
+                  {member.department && (
+                    <p className="text-xs text-[#718096] mb-3">{member.department}</p>
+                  )}
+                  {(member.bio ?? member.bio) && (
+                    <p className="text-sm text-[#4A5568] leading-relaxed mb-3">{member.bio}</p>
+                  )}
+                  <div className="flex items-center justify-center gap-3">
+                    {member.linkedin_url && (
+                      <a href={member.linkedin_url} target="_blank" rel="noopener noreferrer"
+                        className="text-[#718096] hover:text-[#0A1628] transition-colors">
+                        <Linkedin size={15} />
+                      </a>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </section>

@@ -7,7 +7,7 @@ import Badge from '../ui/Badge';
 import Button from '../ui/Button';
 import { SkeletonCard } from '../ui/Skeleton';
 import { ROUTES } from '../../config/app';
-import api from '../../services/api';
+import { getProjects } from '../../lib/queries';
 
 const staticProjects = [
   {
@@ -47,20 +47,12 @@ export default function ProjectsShowcase() {
 
   useEffect(() => {
     let cancelled = false;
-    api.get('/projects', { params: { limit: 3 } })
-      .then(({ data }) => {
-        if (!cancelled) {
-          const list = data.data?.projects || (Array.isArray(data.projects) ? data.projects : (Array.isArray(data) ? data : []));
-          setProjects(list.length > 0 ? list : staticProjects);
-          setIsLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setProjects(staticProjects);
-          setIsLoading(false);
-        }
-      });
+    getProjects().then(({ data }) => {
+      if (!cancelled) {
+        setProjects(data?.length ? data : staticProjects);
+        setIsLoading(false);
+      }
+    });
     return () => { cancelled = true; };
   }, []);
 
@@ -87,8 +79,10 @@ export default function ProjectsShowcase() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {displayProjects.slice(0, 3).map((project) => (
-              <Card key={project._id} className="overflow-hidden" hover>
+            {displayProjects.slice(0, 3).map((project) => {
+              const clientType = project.clientType ?? project.category?.toLowerCase() ?? 'govt';
+              return (
+              <Card key={project.id ?? project._id} className="overflow-hidden" hover>
                 {/* Color header */}
                 <div
                   className="h-3"
@@ -96,8 +90,8 @@ export default function ProjectsShowcase() {
                 />
                 <div className="p-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <Badge type={badgeTypeMap[project.clientType] || 'govt'}>
-                      {project.clientType?.toUpperCase() || 'GOVT'}
+                    <Badge type={badgeTypeMap[clientType] || 'govt'}>
+                      {clientType.toUpperCase()}
                     </Badge>
                   </div>
                   <h3 className="text-sm font-bold text-[#0A1628] mb-1 line-clamp-2">{project.name}</h3>
@@ -120,7 +114,8 @@ export default function ProjectsShowcase() {
                   </Link>
                 </div>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
 

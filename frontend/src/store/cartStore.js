@@ -1,5 +1,12 @@
+/**
+ * Cart store — works for both guests and signed-in users.
+ *
+ * Guests:  all state in localStorage, no DB calls.
+ * Signed-in: localStorage is the source of truth during a session;
+ *            DB is synced on login (merge) and can be used for persistence.
+ */
+
 import { create } from 'zustand';
-import api from '../services/api';
 import toast from 'react-hot-toast';
 
 const CART_KEY = 'usj_cart';
@@ -18,77 +25,74 @@ const saveToStorage = (items) => {
 
 const useCartStore = create((set, get) => ({
   items: loadFromStorage(),
-  isLoading: false,
 
+  // ── Derived values ────────────────────────────────────────
   get itemCount() {
     return get().items.reduce((acc, item) => acc + item.qty, 0);
   },
 
-  get subtotal() {
-    return get().items.reduce((acc, item) => {
-      const price = item.product.salePrice || item.product.price || 0;
-      return acc + price * item.qty;
-    }, 0);
-  },
-
+  // ── Add or increment ──────────────────────────────────────
   addItem: (product, qty = 1) => {
     const items = get().items;
-    const existing = items.find((i) => i.product._id === product._id);
+    const existing = items.find((i) => i.product.id === product.id);
     let newItems;
     if (existing) {
       newItems = items.map((i) =>
-        i.product._id === product._id ? { ...i, qty: i.qty + qty } : i
+        i.product.id === product.id ? { ...i, qty: i.qty + qty } : i
       );
     } else {
-      newItems = [...items, { product, qty, price: product.salePrice || product.price }];
+      newItems = [...items, { product, qty }];
     }
     saveToStorage(newItems);
     set({ items: newItems });
     toast.success(`${product.name} added to cart`);
   },
 
+  // ── Remove one product ────────────────────────────────────
   removeItem: (productId) => {
-    const newItems = get().items.filter((i) => i.product._id !== productId);
+    const newItems = get().items.filter((i) => i.product.id !== productId);
     saveToStorage(newItems);
     set({ items: newItems });
-    toast.success('Item removed from cart');
+    toast.success('Item removed');
   },
 
+  // ── Set exact quantity ────────────────────────────────────
   updateQty: (productId, qty) => {
-    if (qty < 1) return;
+    if (qty < 1) {
+      get().removeItem(productId);
+      return;
+    }
     const newItems = get().items.map((i) =>
-      i.product._id === productId ? { ...i, qty } : i
+      i.product.id === productId ? { ...i, qty } : i
     );
     saveToStorage(newItems);
     set({ items: newItems });
   },
 
+  // ── Clear entire cart ─────────────────────────────────────
   clearCart: () => {
     localStorage.removeItem(CART_KEY);
     set({ items: [] });
   },
 
-  syncWithBackend: async () => {
-    const token = localStorage.getItem('usj_token');
-    if (!token) return;
-    set({ isLoading: true });
-    try {
-      const { data } = await api.get('/cart');
-      const cartItems = data.data?.cart?.items || data.cart?.items || data.items || [];
-      if (cartItems.length > 0) {
-        const syncedItems = cartItems.map((i) => ({
-          product: i.product,
-          qty: i.qty,
-          price: i.price,
-        }));
-        saveToStorage(syncedItems);
-        set({ items: syncedItems, isLoading: false });
+  // ── Merge guest cart with DB cart on login ────────────────
+  mergeWithDb: (dbItems) => {
+    const localItems = get().items;
+    const merged = [...localItems];
+
+    for (const dbItem of dbItems) {
+      const product = dbItem.products; // joined via select
+      if (!product) continue;
+      const existing = merged.find((i) => i.product.id === product.id);
+      if (existing) {
+        existing.qty = Math.max(existing.qty, dbItem.quantity);
       } else {
-        set({ isLoading: false });
+        merged.push({ product, qty: dbItem.quantity });
       }
-    } catch {
-      set({ isLoading: false });
     }
+
+    saveToStorage(merged);
+    set({ items: merged });
   },
 }));
 

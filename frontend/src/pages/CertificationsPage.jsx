@@ -3,7 +3,7 @@ import { Lock } from 'lucide-react';
 import SectionHeader from '../components/ui/SectionHeader';
 import CertCard from '../components/certifications/CertCard';
 import { SkeletonCard } from '../components/ui/Skeleton';
-import api from '../services/api';
+import { getCertifications } from '../lib/queries';
 
 const staticCerts = [
   {
@@ -49,16 +49,10 @@ export default function CertificationsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/certifications')
-      .then(({ data }) => {
-        const list = data.data?.certifications || (Array.isArray(data.certifications) ? data.certifications : (Array.isArray(data) ? data : []));
-        setCerts(list.length > 0 ? list : staticCerts);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setCerts(staticCerts);
-        setIsLoading(false);
-      });
+    getCertifications().then(({ data }) => {
+      setCerts(data?.length ? data : staticCerts);
+      setIsLoading(false);
+    });
   }, []);
 
   return (

@@ -20,6 +20,12 @@ export default function CertModal({ cert, isOpen, onClose }) {
 
   if (!isOpen || !cert) return null;
 
+  // Support both Supabase snake_case and legacy camelCase
+  const imageUrl = cert.image_url ?? cert.imageUrl;
+  const issuingBody = cert.issuing_body ?? cert.issuingBody;
+  const issueDate = cert.issue_date ?? cert.issueDate;
+  const certId = cert.cert_id ?? cert.certId;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -45,9 +51,9 @@ export default function CertModal({ cert, isOpen, onClose }) {
 
         {/* Image */}
         <div className="bg-gray-50 rounded-t-xl p-6 flex items-center justify-center" style={{ minHeight: 240 }}>
-          {cert.imageUrl ? (
+          {imageUrl ? (
             <img
-              src={cert.imageUrl}
+              src={imageUrl}
               alt={cert.name}
               className="max-h-56 object-contain"
             />
@@ -62,19 +68,19 @@ export default function CertModal({ cert, isOpen, onClose }) {
         {/* Details */}
         <div className="p-6">
           <h2 className="text-xl font-bold text-[#0A1628] mb-1">{cert.name}</h2>
-          <p className="text-sm text-[#C9A84C] font-semibold mb-5">{cert.issuingBody}</p>
+          <p className="text-sm text-[#C9A84C] font-semibold mb-5">{issuingBody}</p>
 
           <dl className="grid grid-cols-2 gap-4 text-sm mb-5">
-            {cert.certId && (
+            {certId && (
               <>
                 <dt className="text-[#718096]">Certificate ID</dt>
-                <dd className="font-semibold text-[#0A1628] font-mono text-xs">{cert.certId}</dd>
+                <dd className="font-semibold text-[#0A1628] font-mono text-xs">{certId}</dd>
               </>
             )}
-            {cert.issueDate && (
+            {issueDate && (
               <>
                 <dt className="text-[#718096]">Issue Date</dt>
-                <dd className="font-semibold text-[#0A1628]">{cert.issueDate}</dd>
+                <dd className="font-semibold text-[#0A1628]">{issueDate}</dd>
               </>
             )}
             {cert.expiryDate && (

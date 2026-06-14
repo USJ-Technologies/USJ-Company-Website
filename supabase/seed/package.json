@@ -1,0 +1,16 @@
+{
+  "name": "usj-seed",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Seed script: migrates product images + data to Supabase",
+  "scripts": {
+    "seed": "node seed.js",
+    "seed:enter": "node seed.js --brand=enter",
+    "seed:tenda": "node seed.js --brand=tenda",
+    "seed:zoook": "node seed.js --brand=zoook"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5"
+  }
+}

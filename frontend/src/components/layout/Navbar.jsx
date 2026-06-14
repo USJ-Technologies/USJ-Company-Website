@@ -25,7 +25,7 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
 
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, profile, isAuthenticated, logout } = useAuthStore();
   const items = useCartStore((s) => s.items);
   const itemCount = items.reduce((acc, i) => acc + i.qty, 0);
 
@@ -131,9 +131,9 @@ export default function Navbar() {
                     className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
                     style={{ backgroundColor: '#0A1628' }}
                   >
-                    {user.name?.[0]?.toUpperCase() || 'U'}
+                    {(profile?.name || user?.email)?.[0]?.toUpperCase() || 'U'}
                   </div>
-                  <span className="max-w-[80px] truncate">{user.name?.split(' ')[0]}</span>
+                  <span className="max-w-[80px] truncate">{profile?.name?.split(' ')[0] || user?.email?.split('@')[0]}</span>
                   <ChevronDown size={14} />
                 </button>
 
@@ -145,7 +145,7 @@ export default function Navbar() {
                     <Link to={ROUTES.ORDERS} className="flex items-center gap-2 px-4 py-2 text-sm text-[#0A1628] hover:bg-gray-50">
                       <Package size={15} /> My Orders
                     </Link>
-                    {user.role === 'admin' && (
+                    {profile?.role === 'admin' && (
                       <Link to={ROUTES.ADMIN_DASHBOARD} className="flex items-center gap-2 px-4 py-2 text-sm text-[#0A1628] hover:bg-gray-50">
                         <Settings size={15} /> Admin Panel
                       </Link>

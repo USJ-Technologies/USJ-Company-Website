@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Image } from 'lucide-react';
 import Modal from '../ui/Modal';
 import { Skeleton } from '../ui/Skeleton';
-import api from '../../services/api';
+import { getCertifications } from '../../lib/queries';
 
 const staticCerts = [
   { _id: 'c1', name: 'Startup India Recognition', issuingBody: 'DPIIT, Govt of India', certId: 'DIPP12345', year: '2024' },
@@ -18,20 +18,12 @@ export default function CertStrip() {
 
   useEffect(() => {
     let cancelled = false;
-    api.get('/certifications')
-      .then(({ data }) => {
-        if (!cancelled) {
-          const list = data.data?.certifications || (Array.isArray(data.certifications) ? data.certifications : (Array.isArray(data) ? data : []));
-          setCerts(list.length > 0 ? list : staticCerts);
-          setIsLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCerts(staticCerts);
-          setIsLoading(false);
-        }
-      });
+    getCertifications().then(({ data }) => {
+      if (!cancelled) {
+        setCerts(data?.length ? data : staticCerts);
+        setIsLoading(false);
+      }
+    });
     return () => { cancelled = true; };
   }, []);
 
@@ -53,13 +45,13 @@ export default function CertStrip() {
           <div className="flex gap-4 overflow-x-auto pb-2 justify-start md:justify-center flex-nowrap">
             {certs.map((cert) => (
               <button
-                key={cert._id}
+                key={cert.id ?? cert._id}
                 onClick={() => setSelected(cert)}
                 className="flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-xl border border-[#E2E8F0] bg-[#F8F9FA] hover:border-[#C9A84C] hover:bg-white transition-all group"
                 style={{ width: 160 }}
               >
-                {cert.imageUrl ? (
-                  <img src={cert.imageUrl} alt={cert.name} className="w-full h-24 object-contain rounded" />
+                {cert.image_url ?? cert.imageUrl ? (
+                  <img src={cert.image_url ?? cert.imageUrl} alt={cert.name} className="w-full h-24 object-contain rounded" />
                 ) : (
                   <div className="w-full h-24 bg-gray-200 rounded flex items-center justify-center">
                     <Image size={28} className="text-gray-400" />
@@ -77,8 +69,8 @@ export default function CertStrip() {
       <Modal isOpen={!!selected} onClose={() => setSelected(null)} title={selected?.name} size="md">
         {selected && (
           <div>
-            {selected.imageUrl ? (
-              <img src={selected.imageUrl} alt={selected.name} className="w-full h-48 object-contain rounded-lg mb-4 bg-gray-100" />
+            {(selected.image_url ?? selected.imageUrl) ? (
+              <img src={selected.image_url ?? selected.imageUrl} alt={selected.name} className="w-full h-48 object-contain rounded-lg mb-4 bg-gray-100" />
             ) : (
               <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
                 <Image size={40} className="text-gray-300" />
@@ -87,18 +79,18 @@ export default function CertStrip() {
             <dl className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <dt className="font-medium text-[#4A5568]">Issuing Body</dt>
-                <dd className="text-[#0A1628] font-semibold">{selected.issuingBody}</dd>
+                <dd className="text-[#0A1628] font-semibold">{selected.issuing_body ?? selected.issuingBody}</dd>
               </div>
-              {selected.certId && (
+              {(selected.cert_id ?? selected.certId) && (
                 <div className="flex justify-between">
                   <dt className="font-medium text-[#4A5568]">Certificate ID</dt>
-                  <dd className="text-[#0A1628] font-semibold">{selected.certId}</dd>
+                  <dd className="text-[#0A1628] font-semibold">{selected.cert_id ?? selected.certId}</dd>
                 </div>
               )}
-              {(selected.issueDate || selected.year) && (
+              {(selected.issue_date ?? selected.issueDate ?? selected.year) && (
                 <div className="flex justify-between">
                   <dt className="font-medium text-[#4A5568]">Issue Date</dt>
-                  <dd className="text-[#0A1628] font-semibold">{selected.issueDate || selected.year}</dd>
+                  <dd className="text-[#0A1628] font-semibold">{selected.issue_date ?? selected.issueDate ?? selected.year}</dd>
                 </div>
               )}
               {selected.description && (

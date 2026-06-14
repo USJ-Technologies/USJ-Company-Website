@@ -4,7 +4,7 @@ import SectionHeader from '../components/ui/SectionHeader';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { APP_CONFIG } from '../config/app';
-import api from '../services/api';
+import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 const inquiryTypes = ['General Inquiry', 'Request Quote', 'Partnership', 'GeM Order', 'Other'];
@@ -33,14 +33,19 @@ export default function ContactPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    try {
-      await api.post('/inquiries', form);
+    const { error } = await supabase.from('quote_requests').insert({
+      name: form.fullName,
+      email: form.email,
+      phone: form.phone || null,
+      organization: form.organization || null,
+      message: `[${form.type}] ${form.subject ? form.subject + ': ' : ''}${form.message}`,
+    });
+    setSubmitting(false);
+    if (error) {
+      toast.error('Failed to send message. Please email us directly.');
+    } else {
       setSuccess(true);
       setForm(initialForm);
-    } catch {
-      toast.error('Failed to send message. Please try again or email us directly.');
-    } finally {
-      setSubmitting(false);
     }
   };
 

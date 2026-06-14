@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import useAuthStore from './store/authStore';
 import useCartStore from './store/cartStore';
+import { getCartFromDb } from './lib/queries';
 
 // Layouts & Wrappers
 import Layout from './components/layout/Layout';
@@ -21,13 +22,13 @@ import ContactPage from './pages/ContactPage';
 import ShopPage from './pages/ShopPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CartPage from './pages/CartPage';
-import WishlistPage from './pages/WishlistPage';
+import QuoteRequestPage from './pages/QuoteRequestPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import WishlistPage from './pages/WishlistPage';
 
 // Protected User Pages
 import ProfilePage from './pages/ProfilePage';
-import CheckoutPage from './pages/CheckoutPage';
 import OrdersPage from './pages/OrdersPage';
 
 // Admin Pages
@@ -37,20 +38,29 @@ import OrdersAdminPage from './pages/admin/OrdersAdminPage';
 import InquiriesAdminPage from './pages/admin/InquiriesAdminPage';
 import VenturesAdminPage from './pages/admin/VenturesAdminPage';
 import CertificationsAdminPage from './pages/admin/CertificationsAdminPage';
-import PDFImportPage from './pages/admin/PDFImportPage';
+import TeamAdminPage from './pages/admin/TeamAdminPage';
 
 const App = () => {
-  const { getMe } = useAuthStore();
-  const { syncWithBackend } = useCartStore();
+  const { init, isAuthenticated } = useAuthStore();
+  const { mergeWithDb } = useCartStore();
 
+  // Init Supabase Auth listener on mount
+  useEffect(() => { init(); }, [init]);
+
+  // When user logs in, merge guest cart with any server cart
   useEffect(() => {
-    getMe();
-    syncWithBackend();
-  }, [getMe, syncWithBackend]);
+    if (!isAuthenticated) return;
+    const userId = useAuthStore.getState().user?.id;
+    if (userId) {
+      getCartFromDb(userId).then(({ data }) => {
+        if (data?.length) mergeWithDb(data);
+      });
+    }
+  }, [isAuthenticated, mergeWithDb]);
 
   return (
     <Routes>
-      {/* Public & Protected Routes with Standard Layout */}
+      {/* Public & user routes with standard Layout */}
       <Route element={<Layout />}>
         {/* Public */}
         <Route path="/" element={<HomePage />} />
@@ -65,34 +75,18 @@ const App = () => {
         <Route path="/product/:slug" element={<ProductDetailPage />} />
         <Route path="/shop/product/:slug" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/quote-request" element={<QuoteRequestPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        
-        {/* Protected User */}
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        } />
-        <Route path="/checkout" element={
-          <ProtectedRoute>
-            <CheckoutPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/orders" element={
-          <ProtectedRoute>
-            <OrdersPage />
-          </ProtectedRoute>
-        } />
+
+        {/* Protected user */}
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
       </Route>
 
-      {/* Admin Routes with Admin Layout */}
-      <Route path="/admin" element={
-        <AdminRoute>
-          <AdminLayout />
-        </AdminRoute>
-      }>
+      {/* Admin routes */}
+      <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
         <Route index element={<DashboardPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="products" element={<ProductsAdminPage />} />
@@ -100,7 +94,7 @@ const App = () => {
         <Route path="inquiries" element={<InquiriesAdminPage />} />
         <Route path="ventures" element={<VenturesAdminPage />} />
         <Route path="certifications" element={<CertificationsAdminPage />} />
-        <Route path="pdf-import" element={<PDFImportPage />} />
+        <Route path="team" element={<TeamAdminPage />} />
       </Route>
     </Routes>
   );

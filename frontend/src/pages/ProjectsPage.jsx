@@ -5,7 +5,7 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import { SkeletonCard } from '../components/ui/Skeleton';
-import api from '../services/api';
+import { getProjects } from '../lib/queries';
 
 const filterTabs = ['All', 'Govt', 'Defence', 'Tech', 'GeM'];
 
@@ -87,21 +87,18 @@ export default function ProjectsPage() {
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
-    api.get('/projects')
-      .then(({ data }) => {
-        const list = data.data?.projects || (Array.isArray(data.projects) ? data.projects : (Array.isArray(data) ? data : []));
-        setProjects(list.length > 0 ? list : staticProjects);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setProjects(staticProjects);
-        setIsLoading(false);
-      });
+    getProjects().then(({ data }) => {
+      setProjects(data?.length ? data : staticProjects);
+      setIsLoading(false);
+    });
   }, []);
 
   const filtered = activeFilter === 'All'
     ? projects
-    : projects.filter((p) => p.clientType?.toLowerCase() === activeFilter.toLowerCase());
+    : projects.filter((p) => {
+        const type = p.clientType ?? p.category ?? '';
+        return type.toLowerCase() === activeFilter.toLowerCase();
+      });
 
   return (
     <div>
@@ -153,8 +150,8 @@ export default function ProjectsPage() {
                   <div className="h-2" style={{ backgroundColor: project.color || '#EBF4FF' }} />
                   <div className="p-5">
                     <div className="flex items-center gap-2 mb-3">
-                      <Badge type={badgeTypeMap[project.clientType] || 'govt'}>
-                        {project.clientType?.toUpperCase() || 'GOVT'}
+                      <Badge type={badgeTypeMap[(project.clientType ?? project.category ?? 'govt').toLowerCase()] || 'govt'}>
+                        {(project.clientType ?? project.category ?? 'GOVT').toUpperCase()}
                       </Badge>
                       {project.year && (
                         <span className="text-xs text-[#718096]">{project.year}</span>
@@ -194,8 +191,8 @@ export default function ProjectsPage() {
         {selected && (
           <div>
             <div className="flex flex-wrap gap-2 mb-4">
-              <Badge type={badgeTypeMap[selected.clientType] || 'govt'}>
-                {selected.clientType?.toUpperCase()}
+              <Badge type={badgeTypeMap[(selected.clientType ?? selected.category ?? 'govt').toLowerCase()] || 'govt'}>
+                {(selected.clientType ?? selected.category ?? 'GOVT').toUpperCase()}
               </Badge>
               {selected.year && <span className="text-xs text-[#718096] self-center">{selected.year}</span>}
             </div>

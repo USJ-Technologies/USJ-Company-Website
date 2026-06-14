@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, X, SlidersHorizontal } from 'lucide-react';
-import api from '../../services/api';
+import { supabase } from '../../lib/supabase';
 
 const STATIC_CATEGORIES = [
   'Surveillance & Security',
@@ -23,18 +23,15 @@ export default function ProductFilters({ filters, onFilterChange, onClear }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    api.get('/categories')
+    supabase.from('categories').select('name').order('name')
       .then(({ data }) => {
-        const cats = data.data?.categories || data.categories || [];
-        if (cats.length > 0) {
-          setCategoriesList(cats.map(c => c.name));
+        if (data?.length > 0) {
+          setCategoriesList(data.map((c) => c.name));
         } else {
           setCategoriesList(STATIC_CATEGORIES);
         }
       })
-      .catch(() => {
-        setCategoriesList(STATIC_CATEGORIES);
-      });
+      .catch(() => setCategoriesList(STATIC_CATEGORIES));
   }, []);
 
   const FilterContent = () => (

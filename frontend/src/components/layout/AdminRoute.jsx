@@ -3,13 +3,13 @@ import { Navigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 
 const AdminRoute = ({ children }) => {
-  const { user, isAuthenticated, isLoading } = useAuthStore();
+  const { profile, isAuthenticated, isLoading } = useAuthStore();
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  if (!isAuthenticated || user?.role !== 'admin') {
+  if (!isAuthenticated || profile?.role !== 'admin') {
     return <Navigate to="/" replace />;
   }
 

@@ -1,148 +1,89 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingCart, Image, Star } from 'lucide-react';
-import Badge from '../ui/Badge';
-import { formatPrice } from '../../utils/formatPrice';
-import { ROUTES } from '../../config/app';
+import { ShoppingCart, Package, CheckCircle } from 'lucide-react';
 import useCartStore from '../../store/cartStore';
-import useWishlistStore from '../../store/wishlistStore';
 
-/**
- * @param {{ product: object, compact?: boolean }} props
- */
-export default function ProductCard({ product, compact = false }) {
+export default function ProductCard({ product }) {
   const [imgError, setImgError] = useState(false);
+  const [added, setAdded] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
-  const { toggleItem, isInWishlist } = useWishlistStore();
-  const inWishlist = isInWishlist(product._id);
 
-  const mainImage = product.images?.[0] || product.imageUrl || null;
-  const price = product.salePrice || product.price;
-  const hasDiscount = product.salePrice && product.price && product.salePrice < product.price;
-  const inStock = product.stock === undefined || product.stock > 0;
+  const imageUrl = product.primary_image_url;
 
-  const catName = product.categoryName || product.category?.name || (typeof product.category === 'string' ? product.category : '') || 'Product';
-
-  const categoryBadgeType = () => {
-    const cat = catName.toLowerCase();
-    if (cat.includes('surveillance') || cat.includes('defence')) return 'defence';
-    if (cat.includes('govt') || cat.includes('government')) return 'govt';
-    if (cat.includes('network')) return 'tech';
-    return 'private';
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    addItem(product, 1);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
   };
 
   return (
-    <div
-      className="bg-white rounded-[8px] border border-[#E2E8F0] overflow-hidden card-hover flex flex-col"
-      style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}
-    >
+    <div className="bg-white rounded-[8px] border border-[#E2E8F0] overflow-hidden flex flex-col group transition-shadow hover:shadow-md">
       {/* Image */}
-      <div className="relative overflow-hidden bg-gray-100" style={{ paddingTop: compact ? '60%' : '70%' }}>
-        {mainImage && !imgError ? (
-          <img
-            src={mainImage}
-            alt={product.name}
-            onError={() => setImgError(true)}
-            className="absolute inset-0 w-full h-full object-contain p-3"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-            <Image size={32} className="text-gray-300" />
-          </div>
-        )}
-
-        {/* Category badge */}
-        <div className="absolute top-2 left-2">
-          <Badge type={categoryBadgeType()}>
-            {catName}
-          </Badge>
-        </div>
-
-        {/* Wishlist button */}
-        <button
-          onClick={(e) => { e.preventDefault(); toggleItem(product); }}
-          className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition-colors shadow-sm"
-          aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-        >
-          <Heart
-            size={15}
-            style={{ fill: inWishlist ? '#C53030' : 'none', color: inWishlist ? '#C53030' : '#718096' }}
-          />
-        </button>
-
-        {/* Stock badge */}
-        {!inStock && (
-          <div className="absolute bottom-2 left-2">
-            <Badge type="danger">Out of Stock</Badge>
-          </div>
-        )}
-
-        {/* Discount badge */}
-        {hasDiscount && (
-          <div
-            className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded text-xs font-bold text-white"
-            style={{ backgroundColor: '#C53030' }}
-          >
-            -{Math.round((1 - product.salePrice / product.price) * 100)}%
-          </div>
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="p-4 flex flex-col flex-1">
-        {product.brand && (
-          <p className="text-xs text-[#718096] mb-1">{product.brand}</p>
-        )}
-        <Link
-          to={ROUTES.PRODUCT_DETAIL(product.slug || product._id)}
-          className="text-sm font-bold text-[#0A1628] hover:text-[#C9A84C] transition-colors line-clamp-2 mb-2 leading-snug"
-        >
-          {product.name}
-        </Link>
-
-        {/* Price or B2B */}
-        <div className="mb-3 flex-1 flex items-end">
-          {product.isB2B ? (
-            <span className="text-xs font-semibold text-[#4A5568] bg-[#F8F9FA] px-2 py-1 rounded border border-[#E2E8F0]">
-              Contact for Quote
-            </span>
+      <Link to={`/product/${product.slug}`} className="block">
+        <div className="relative overflow-hidden bg-[#F8F9FA]" style={{ paddingTop: '72%' }}>
+          {imageUrl && !imgError ? (
+            <img
+              src={imageUrl}
+              alt={product.name}
+              onError={() => setImgError(true)}
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
+            />
           ) : (
-            <div>
-              {hasDiscount && (
-                <span className="text-xs text-[#718096] line-through mr-1">
-                  {formatPrice(product.price)}
-                </span>
-              )}
-              <span className="text-base font-bold" style={{ color: hasDiscount ? '#C53030' : '#0A1628' }}>
-                {formatPrice(price)}
+            <div className="absolute inset-0 flex items-center justify-center bg-[#F8F9FA]">
+              <Package size={36} className="text-gray-300" />
+            </div>
+          )}
+
+          {/* Brand badge */}
+          {product.brand_name && (
+            <div className="absolute top-2 left-2">
+              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-[#0A1628] text-white uppercase tracking-wide">
+                {product.brand_name}
+              </span>
+            </div>
+          )}
+
+          {/* B2B tag */}
+          {product.is_b2b && (
+            <div className="absolute top-2 right-2">
+              <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-[#C9A84C] text-white">
+                B2B
               </span>
             </div>
           )}
         </div>
+      </Link>
+
+      {/* Info */}
+      <div className="p-3 flex flex-col flex-1">
+        {product.category_name && (
+          <p className="text-[10px] text-[#718096] uppercase tracking-wide mb-1">{product.category_name}</p>
+        )}
+
+        <Link
+          to={`/product/${product.slug}`}
+          className="text-sm font-semibold text-[#0A1628] hover:text-[#C9A84C] transition-colors line-clamp-2 leading-snug mb-3 flex-1"
+        >
+          {product.name}
+        </Link>
 
         {/* CTA */}
-        {product.isB2B ? (
-          <Link
-            to={ROUTES.CONTACT}
-            className="w-full py-2 rounded-[6px] text-xs font-semibold text-center text-[#0A1628] border border-[#0A1628] hover:bg-[#0A1628] hover:text-white transition-colors"
-          >
-            Get Quote
-          </Link>
-        ) : (
-          <button
-            onClick={() => inStock && addItem(product, 1)}
-            disabled={!inStock}
-            className="w-full py-2 rounded-[6px] text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
-            style={{
-              backgroundColor: inStock ? '#0A1628' : '#E2E8F0',
-              color: inStock ? '#fff' : '#A0AEC0',
-              cursor: inStock ? 'pointer' : 'not-allowed',
-            }}
-          >
-            <ShoppingCart size={13} />
-            {inStock ? 'Add to Cart' : 'Out of Stock'}
-          </button>
-        )}
+        <button
+          onClick={handleAddToCart}
+          className={`w-full py-2 rounded-[6px] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+            added
+              ? 'bg-green-600 text-white'
+              : 'bg-[#0A1628] text-white hover:bg-[#1a2a4a]'
+          }`}
+        >
+          {added ? (
+            <><CheckCircle size={13} /> Added</>
+          ) : (
+            <><ShoppingCart size={13} /> Add to Cart</>
+          )}
+        </button>
       </div>
     </div>
   );
