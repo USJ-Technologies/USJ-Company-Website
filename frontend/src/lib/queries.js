@@ -369,7 +369,6 @@ export async function submitQuoteRequest({ userId, name, email, phone, organizat
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({
         reference_number: quote.reference_number,

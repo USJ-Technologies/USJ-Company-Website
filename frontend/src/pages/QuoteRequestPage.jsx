@@ -1,10 +1,167 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FileText, CheckCircle, ArrowLeft, Package, Loader2 } from 'lucide-react';
+import { FileText, CheckCircle, ArrowLeft, Package, Loader2, ChevronDown, Plus, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
 import { submitQuoteRequest } from '../lib/queries';
+
+const ORG_STORAGE_KEY = 'usj_known_organizations';
+const DEFAULT_ORGS = [
+  'Government of Uttarakhand',
+  'ITDA Uttarakhand',
+  'ONGC',
+  'BHEL',
+  'Indian Army',
+  'Indian Air Force',
+  'CRPF',
+  'Uttarakhand Police',
+  'UPCL',
+  'MDDA Dehradun',
+  'Municipal Corporation Dehradun',
+  'NIT Uttarakhand',
+  'Graphic Era University',
+  'DIT University',
+];
+
+function OrgCombobox({ value, onChange, placeholder }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const containerRef = useRef(null);
+  const searchRef = useRef(null);
+
+  const [orgs, setOrgs] = useState(() => {
+    try {
+      const saved = localStorage.getItem(ORG_STORAGE_KEY);
+      const parsed = saved ? JSON.parse(saved) : [];
+      const merged = [...new Set([...DEFAULT_ORGS, ...parsed])];
+      return merged;
+    } catch {
+      return DEFAULT_ORGS;
+    }
+  });
+
+  const showSearch = orgs.length >= 10;
+  const filtered = orgs.filter(o =>
+    o.toLowerCase().includes((showSearch ? search : value).toLowerCase())
+  );
+  const trimmed = value.trim();
+  const isNew = trimmed && !orgs.some(o => o.toLowerCase() === trimmed.toLowerCase());
+
+  const saveOrg = (org) => {
+    const updated = [...new Set([...orgs, org])];
+    setOrgs(updated);
+    const custom = updated.filter(o => !DEFAULT_ORGS.includes(o));
+    localStorage.setItem(ORG_STORAGE_KEY, JSON.stringify(custom));
+  };
+
+  const select = (org) => {
+    onChange(org);
+    setIsOpen(false);
+    setSearch('');
+  };
+
+  const addNew = () => {
+    if (!trimmed) return;
+    saveOrg(trimmed);
+    setIsOpen(false);
+    setSearch('');
+  };
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+        setSearch('');
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isOpen && showSearch && searchRef.current) {
+      setTimeout(() => searchRef.current?.focus(), 50);
+    }
+  }, [isOpen, showSearch]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="relative">
+        <input
+          type="text"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onFocus={() => setIsOpen(true)}
+          placeholder={placeholder}
+          className="w-full px-3 py-2.5 pr-9 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C] bg-white"
+          autoComplete="off"
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => setIsOpen(o => !o)}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#718096] hover:text-[#0A1628] transition-colors"
+        >
+          <ChevronDown size={15} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-[#E2E8F0] rounded-[8px] shadow-lg overflow-hidden">
+          {showSearch && (
+            <div className="px-2 pt-2 pb-1 border-b border-[#E2E8F0]">
+              <div className="flex items-center gap-2 px-2 py-1.5 bg-[#F8F9FA] rounded-[6px]">
+                <Search size={13} className="text-[#718096] flex-shrink-0" />
+                <input
+                  ref={searchRef}
+                  type="text"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search organizations..."
+                  className="flex-1 bg-transparent text-xs text-[#0A1628] placeholder-[#A0AEC0] outline-none"
+                />
+              </div>
+            </div>
+          )}
+
+          <ul className="max-h-52 overflow-y-auto py-1">
+            {filtered.length > 0 ? filtered.map(org => (
+              <li key={org}>
+                <button
+                  type="button"
+                  onClick={() => select(org)}
+                  className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-[#F8F9FA] ${
+                    value === org ? 'text-[#C9A84C] font-semibold bg-[#FFF8E7]' : 'text-[#0A1628]'
+                  }`}
+                >
+                  {org}
+                </button>
+              </li>
+            )) : (
+              <li className="px-3 py-2 text-xs text-[#A0AEC0]">No match found</li>
+            )}
+          </ul>
+
+          {isNew && (
+            <div className="border-t border-[#E2E8F0] p-2">
+              <button
+                type="button"
+                onClick={addNew}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-[#1A56DB] hover:bg-[#EBF4FF] rounded-[6px] transition-colors"
+              >
+                <Plus size={13} />
+                Add &quot;{trimmed}&quot; to list
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const EMPTY_FORM = {
   name: '',
@@ -224,13 +381,10 @@ export default function QuoteRequestPage() {
                     <label className="block text-xs font-semibold text-[#0A1628] mb-1.5">
                       Organization / Department
                     </label>
-                    <input
-                      type="text"
-                      name="organization"
+                    <OrgCombobox
                       value={form.organization}
-                      onChange={handleChange}
+                      onChange={val => setForm(f => ({ ...f, organization: val }))}
                       placeholder="Company or govt. dept."
-                      className="w-full px-3 py-2.5 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C] bg-white"
                     />
                   </div>
                 </div>
