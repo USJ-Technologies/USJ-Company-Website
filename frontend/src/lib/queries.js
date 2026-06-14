@@ -332,25 +332,33 @@ export async function getRecommendedForUser(userId, limit = 4) {
 // ── Quote Requests ────────────────────────────────────────────
 
 export async function submitQuoteRequest({ userId, name, email, phone, organization, message, items }) {
-  // 1. Insert the quote request
-  const { data: quote, error: quoteError } = await supabase
+  // Generate id and reference_number client-side so we don't need
+  // a SELECT after INSERT (which would be blocked by RLS for anon users,
+  // since the SELECT policy only allows auth.uid() = user_id).
+  const quoteId = crypto.randomUUID();
+  const refSuffix = Date.now().toString(36).toUpperCase().slice(-6) +
+    Math.random().toString(36).toUpperCase().slice(2, 5);
+  const referenceNumber = 'QR-' + refSuffix;
+
+  // 1. Insert the quote request (no .select() — avoids RLS SELECT block for anon)
+  const { error: quoteError } = await supabase
     .from('quote_requests')
     .insert({
+      id: quoteId,
+      reference_number: referenceNumber,
       user_id: userId ?? null,
       name,
       email,
       phone: phone || null,
       organization: organization || null,
       message: message || null,
-    })
-    .select('id, reference_number')
-    .single();
+    });
 
   if (quoteError) return { data: null, error: quoteError };
 
   // 2. Insert all quote line items
   const lineItems = items.map((item) => ({
-    quote_id: quote.id,
+    quote_id: quoteId,
     product_id: item.product.id,
     product_name: item.product.name,
     product_sku: item.product.model ?? null,
@@ -371,7 +379,7 @@ export async function submitQuoteRequest({ userId, name, email, phone, organizat
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        reference_number: quote.reference_number,
+        reference_number: referenceNumber,
         name,
         email,
         phone,
@@ -384,5 +392,5 @@ export async function submitQuoteRequest({ userId, name, email, phone, organizat
     // Email failure is non-fatal; quote was already saved
   }
 
-  return { data: quote, error: null };
+  return { data: { id: quoteId, reference_number: referenceNumber }, error: null };
 }
