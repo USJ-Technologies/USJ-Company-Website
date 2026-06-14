@@ -26,10 +26,11 @@ export default function Footer() {
   return (
     <footer style={{ backgroundColor: '#0A1628', color: '#CBD5E0' }}>
       {/* Main grid */}
-      <div className="container-max py-14">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+      <div className="container-max py-10 lg:py-14">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
+
           {/* Column 1: About */}
-          <div>
+          <div className="sm:col-span-2 lg:col-span-1">
             <div className="mb-4">
               <span className="text-xl font-bold text-white">USJ</span>
               <span className="text-xl font-bold text-[#C9A84C]"> Technologies</span>
@@ -38,7 +39,7 @@ export default function Footer() {
             <p className="text-sm leading-relaxed text-[#A0AEC0] mb-5">
               {company.tagline}. Delivering cutting-edge technology solutions for Government, Defence, and commercial sectors across India.
             </p>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2.5 text-sm">
               <div className="flex items-start gap-2">
                 <MapPin size={15} className="mt-0.5 shrink-0 text-[#C9A84C]" />
                 <span className="text-[#A0AEC0]">{company.address}</span>
@@ -56,16 +57,13 @@ export default function Footer() {
 
           {/* Column 2: Quick Links */}
           <div>
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-5">
+            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
               Quick Links
             </h3>
             <ul className="space-y-2">
-              {quickLinks.map((link) => (
+              {quickLinks.map(link => (
                 <li key={link.to}>
-                  <Link
-                    to={link.to}
-                    className="text-sm text-[#A0AEC0] hover:text-[#C9A84C] transition-colors"
-                  >
+                  <Link to={link.to} className="text-sm text-[#A0AEC0] hover:text-[#C9A84C] transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -75,11 +73,11 @@ export default function Footer() {
 
           {/* Column 3: Our Ventures */}
           <div>
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-5">
+            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
               Our Ventures
             </h3>
             <ul className="space-y-3">
-              {ventures.map((v) => (
+              {ventures.map(v => (
                 <li key={v.id}>
                   {v.isRevealed && v.websiteUrl ? (
                     <a
@@ -88,8 +86,7 @@ export default function Footer() {
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 text-sm text-[#A0AEC0] hover:text-[#C9A84C] transition-colors"
                     >
-                      {v.name}
-                      <ExternalLink size={11} />
+                      {v.name}<ExternalLink size={11} />
                     </a>
                   ) : (
                     <span className="text-sm text-[#718096]">
@@ -102,25 +99,18 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Column 4: Legal */}
+          {/* Column 4: Legal + Hours */}
           <div>
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-5">
-              Legal
-            </h3>
-            <ul className="space-y-2 mb-6">
-              {legal.map((link) => (
+            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">Legal</h3>
+            <ul className="space-y-2 mb-5">
+              {legal.map(link => (
                 <li key={link.label}>
-                  <Link
-                    to={link.to}
-                    className="text-sm text-[#A0AEC0] hover:text-[#C9A84C] transition-colors"
-                  >
+                  <Link to={link.to} className="text-sm text-[#A0AEC0] hover:text-[#C9A84C] transition-colors">
                     {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
-
-            {/* Working Hours */}
             <div className="text-sm text-[#A0AEC0] space-y-1">
               <p className="text-white font-medium text-xs uppercase tracking-wide mb-2">Office Hours</p>
               <p>Mon–Fri: 9:00 AM – 6:00 PM</p>
@@ -132,48 +122,43 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t" style={{ borderColor: '#1A2E4A' }}>
-        <div className="container-max py-5 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="container-max py-4 flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
           {/* Badges */}
-          <div className="flex items-center gap-4 flex-wrap justify-center md:justify-start">
+          <div className="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold" style={{ backgroundColor: '#1A2E4A', color: '#C9A84C' }}>
-              <ShieldCheck size={14} />
-              GeM Registered Seller
+              <ShieldCheck size={13} /> GeM Registered
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold" style={{ backgroundColor: '#1A2E4A', color: '#C9A84C' }}>
-              <Award size={14} />
-              Startup India Certified
+              <Award size={13} /> Startup India
             </div>
           </div>
 
+          {/* Copyright — centre on sm+ */}
+          <p className="text-xs text-[#4A5568] sm:flex-1 text-center order-last sm:order-none">
+            © {new Date().getFullYear()} {company.name}. All rights reserved.
+          </p>
+
           {/* Social */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {company.social.linkedin && (
               <a href={company.social.linkedin} target="_blank" rel="noopener noreferrer"
-                className="p-2 rounded-md hover:bg-[#1A2E4A] text-[#718096] hover:text-[#C9A84C] transition-colors"
-                aria-label="LinkedIn">
-                <Linkedin size={16} />
+                className="p-2 rounded-md hover:bg-[#1A2E4A] text-[#718096] hover:text-[#C9A84C] transition-colors" aria-label="LinkedIn">
+                <Linkedin size={15} />
               </a>
             )}
             {company.social.twitter && (
               <a href={company.social.twitter} target="_blank" rel="noopener noreferrer"
-                className="p-2 rounded-md hover:bg-[#1A2E4A] text-[#718096] hover:text-[#C9A84C] transition-colors"
-                aria-label="Twitter">
-                <Twitter size={16} />
+                className="p-2 rounded-md hover:bg-[#1A2E4A] text-[#718096] hover:text-[#C9A84C] transition-colors" aria-label="Twitter">
+                <Twitter size={15} />
               </a>
             )}
             {company.social.instagram && (
               <a href={company.social.instagram} target="_blank" rel="noopener noreferrer"
-                className="p-2 rounded-md hover:bg-[#1A2E4A] text-[#718096] hover:text-[#C9A84C] transition-colors"
-                aria-label="Instagram">
-                <Instagram size={16} />
+                className="p-2 rounded-md hover:bg-[#1A2E4A] text-[#718096] hover:text-[#C9A84C] transition-colors" aria-label="Instagram">
+                <Instagram size={15} />
               </a>
             )}
           </div>
-
-          {/* Copyright */}
-          <p className="text-xs text-[#4A5568] text-center">
-            © {new Date().getFullYear()} {company.name}. All rights reserved.
-          </p>
         </div>
       </div>
     </footer>

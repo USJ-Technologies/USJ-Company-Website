@@ -20,25 +20,25 @@ export default function HeroSection() {
   const { company, stats } = APP_CONFIG;
 
   return (
-    <section className="hero-pattern relative overflow-hidden" style={{ minHeight: 'calc(100vh - 64px)' }}>
+    <section className="hero-pattern relative overflow-hidden">
       <div
         className="absolute inset-0 pointer-events-none"
         style={{ background: 'linear-gradient(135deg, rgba(10,22,40,0.03) 0%, transparent 60%)' }}
       />
 
-      <div className="container-max relative z-10 flex flex-col lg:flex-row items-center gap-12 py-16 lg:py-24 min-h-[calc(100vh-64px)]">
+      <div className="container-max relative z-10 flex flex-col lg:flex-row items-center gap-8 lg:gap-12 py-12 sm:py-16 lg:py-24 lg:min-h-[calc(100vh-64px)]">
 
         {/* ── Left: Copy ── */}
-        <div className="flex-1 max-w-xl fade-up">
+        <div className="flex-1 max-w-xl w-full fade-up">
           <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-5"
             style={{ backgroundColor: '#EBF4FF', color: '#1A3A5C', border: '1px solid #BFDBFE' }}
           >
             <ShieldCheck size={13} />
             GeM Registered · Startup India Certified · MSME
           </div>
 
-          <h1 className="text-4xl md:text-5xl lg:text-[52px] font-bold text-[#0A1628] leading-tight mb-5">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-bold text-[#0A1628] leading-tight mb-4">
             {company.tagline.split(' ').map((word, i) =>
               ['Future', 'Technology'].includes(word) ? (
                 <span key={i} className="text-[#C9A84C]">{word} </span>
@@ -48,13 +48,13 @@ export default function HeroSection() {
             )}
           </h1>
 
-          <p className="text-base md:text-lg text-[#4A5568] leading-relaxed mb-6">
+          <p className="text-sm sm:text-base md:text-lg text-[#4A5568] leading-relaxed mb-5">
             USJ Technologies is a GeM-registered, Startup India certified technology company based in Dehradun — delivering electronics, networking, surveillance, and IT solutions to Government, Defence, and commercial sectors across India.
           </p>
 
           {/* Sectors */}
-          <div className="flex flex-wrap gap-2 mb-8">
-            {sectors.map((s) => (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {sectors.map(s => (
               <span
                 key={s.label}
                 className="px-3 py-1 rounded-full text-xs font-semibold"
@@ -65,7 +65,7 @@ export default function HeroSection() {
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-3 mb-10">
+          <div className="flex flex-wrap gap-3 mb-8">
             <Button as={Link} to={ROUTES.SHOP} variant="primary" size="lg">
               Browse Products
             </Button>
@@ -82,22 +82,38 @@ export default function HeroSection() {
               { value: stats.products, label: 'Products' },
             ].map(({ value, label }) => (
               <div key={label}>
-                <p className="text-2xl font-bold text-[#0A1628]">{value}</p>
+                <p className="text-xl sm:text-2xl font-bold text-[#0A1628]">{value}</p>
                 <p className="text-xs text-[#718096] mt-0.5">{label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* ── Right: Credentials panel ── */}
-        <div className="flex-1 flex items-center justify-center w-full max-w-md lg:max-w-none">
+        {/* ── Right: Credentials panel (desktop only, tablet+ shows compact strip) ── */}
+        {/* Mobile: compact trust strip */}
+        <div className="lg:hidden w-full">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {credentials.map(({ icon: Icon, label, sub }) => (
+              <div
+                key={label}
+                className="flex flex-col items-center text-center p-3 rounded-xl border border-[#E2E8F0] bg-white shadow-sm"
+              >
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2" style={{ backgroundColor: '#EBF4FF' }}>
+                  <Icon size={14} className="text-[#0A1628]" />
+                </div>
+                <p className="text-xs font-bold text-[#0A1628] leading-tight">{label}</p>
+                <p className="text-[10px] text-[#718096] mt-0.5 leading-tight">{sub}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Desktop: full credential panel */}
+        <div className="hidden lg:flex flex-1 items-center justify-center w-full">
           <div className="w-full" style={{ maxWidth: 420 }}>
 
             {/* Main credential card */}
-            <div
-              className="rounded-2xl p-6 mb-4 shadow-xl"
-              style={{ backgroundColor: '#0A1628' }}
-            >
+            <div className="rounded-2xl p-6 mb-4 shadow-xl" style={{ backgroundColor: '#0A1628' }}>
               <div className="flex items-center gap-3 mb-5">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm"
@@ -144,27 +160,21 @@ export default function HeroSection() {
                 to={ROUTES.SHOP}
                 className="bg-white rounded-xl p-4 text-center border border-[#E2E8F0] hover:border-[#0A1628] hover:shadow-md transition-all group"
               >
-                <p className="text-xl font-bold text-[#C9A84C] group-hover:scale-110 transition-transform inline-block">
-                  {stats.products}
-                </p>
+                <p className="text-xl font-bold text-[#C9A84C] group-hover:scale-110 transition-transform inline-block">{stats.products}</p>
                 <p className="text-[10px] text-[#718096] mt-0.5 font-medium">Products</p>
               </Link>
               <Link
                 to={ROUTES.PROJECTS}
                 className="bg-white rounded-xl p-4 text-center border border-[#E2E8F0] hover:border-[#0A1628] hover:shadow-md transition-all group"
               >
-                <p className="text-xl font-bold text-[#C9A84C] group-hover:scale-110 transition-transform inline-block">
-                  {stats.projects}
-                </p>
+                <p className="text-xl font-bold text-[#C9A84C] group-hover:scale-110 transition-transform inline-block">{stats.projects}</p>
                 <p className="text-[10px] text-[#718096] mt-0.5 font-medium">Projects Done</p>
               </Link>
               <Link
                 to={ROUTES.CERTIFICATIONS}
                 className="bg-white rounded-xl p-4 text-center border border-[#E2E8F0] hover:border-[#0A1628] hover:shadow-md transition-all group"
               >
-                <p className="text-xl font-bold text-[#C9A84C] group-hover:scale-110 transition-transform inline-block">
-                  {stats.clients}
-                </p>
+                <p className="text-xl font-bold text-[#C9A84C] group-hover:scale-110 transition-transform inline-block">{stats.clients}</p>
                 <p className="text-[10px] text-[#718096] mt-0.5 font-medium">Govt. Clients</p>
               </Link>
             </div>
@@ -181,6 +191,7 @@ export default function HeroSection() {
             </div>
           </div>
         </div>
+
       </div>
 
       {/* Bottom wave */}

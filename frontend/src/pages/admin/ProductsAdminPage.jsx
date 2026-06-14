@@ -1,15 +1,459 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import Badge from '../../components/ui/Badge';
 import Skeleton from '../../components/ui/Skeleton';
-import { Search, Package, ExternalLink, Star } from 'lucide-react';
+import {
+  Search, Package, ExternalLink, Star, Plus, Edit2, Trash2, X,
+  Save, Upload, Link as LinkIcon, ChevronDown, CheckCircle, Image,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
 const PAGE_SIZE = 30;
-
+const BRANDS = ['ENTER', 'TENDA', 'ZOOOK'];
 const BRAND_COLORS = { ENTER: '#1A56DB', TENDA: '#2D7D46', ZOOOK: '#C9A84C' };
 
+function toSlug(brand, name) {
+  const base = `${brand}-${name}`
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-{2,}/g, '-');
+  return `${base}-${Date.now()}`;
+}
+
+function SectionHeader({ title }) {
+  return (
+    <div className="flex items-center gap-2 mb-3">
+      <span className="text-xs font-bold text-[#0A1628] uppercase tracking-wider">{title}</span>
+      <div className="flex-1 h-px bg-[#E2E8F0]" />
+    </div>
+  );
+}
+
+function FieldRow({ label, required, children }) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-[#0A1628] mb-1">
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+const inputCls = 'w-full px-3 py-2 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C] bg-white';
+const addBtnCls = 'px-3 py-2 text-xs font-semibold bg-[#0A1628] text-white rounded-[6px] hover:bg-[#1A2E4A] transition-colors whitespace-nowrap';
+const removeBtnCls = 'p-1 text-[#718096] hover:text-red-500 transition-colors flex-shrink-0';
+
+const emptyForm = {
+  name: '', model: '', brand_name: 'ENTER', category_name: '', description: '',
+  slug: '', key_features: [], specifications: {}, in_box: [],
+  primary_image_url: '', additionalImages: [], product_url: '',
+  is_active: true, is_featured: false, is_b2b: true,
+};
+
+function toFormData(p) {
+  const additionalImages = (p.images || [])
+    .filter(img => img?.url && img.url !== p.primary_image_url)
+    .map(img => img.url);
+  return {
+    name: p.name || '',
+    model: p.model || '',
+    brand_name: p.brand_name || 'ENTER',
+    category_name: p.category_name || '',
+    description: p.description || '',
+    slug: p.slug || '',
+    key_features: Array.isArray(p.key_features) ? p.key_features : [],
+    specifications: (p.specifications && typeof p.specifications === 'object' && !Array.isArray(p.specifications)) ? p.specifications : {},
+    in_box: Array.isArray(p.in_box) ? p.in_box : [],
+    primary_image_url: p.primary_image_url || '',
+    additionalImages,
+    product_url: p.product_url || '',
+    is_active: p.is_active ?? true,
+    is_featured: p.is_featured ?? false,
+    is_b2b: p.is_b2b ?? true,
+  };
+}
+
+// ── ProductForm (top-level to avoid remount) ──────────────────────────────────
+function ProductForm({ initialData, onSave, onClose, saving }) {
+  const [form, setForm] = useState(() => initialData ? toFormData(initialData) : { ...emptyForm });
+  const [slugManual, setSlugManual] = useState(!!initialData);
+  const [newFeature, setNewFeature] = useState('');
+  const [newSpecKey, setNewSpecKey] = useState('');
+  const [newSpecVal, setNewSpecVal] = useState('');
+  const [newBoxItem, setNewBoxItem] = useState('');
+  const [newImgUrl, setNewImgUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
+
+  const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
+
+  useEffect(() => {
+    if (!slugManual && form.name && form.brand_name) {
+      set('slug', toSlug(form.brand_name, form.name));
+    }
+  }, [form.name, form.brand_name, slugManual]);
+
+  // Key features
+  const addFeature = () => {
+    if (!newFeature.trim()) return;
+    set('key_features', [...form.key_features, newFeature.trim()]);
+    setNewFeature('');
+  };
+  const removeFeature = (i) => set('key_features', form.key_features.filter((_, idx) => idx !== i));
+
+  // Specifications
+  const addSpec = () => {
+    if (!newSpecKey.trim()) return;
+    set('specifications', { ...form.specifications, [newSpecKey.trim()]: newSpecVal.trim() });
+    setNewSpecKey(''); setNewSpecVal('');
+  };
+  const removeSpec = (key) => {
+    const next = { ...form.specifications };
+    delete next[key];
+    set('specifications', next);
+  };
+
+  // In box
+  const addBoxItem = () => {
+    if (!newBoxItem.trim()) return;
+    set('in_box', [...form.in_box, newBoxItem.trim()]);
+    setNewBoxItem('');
+  };
+  const removeBoxItem = (i) => set('in_box', form.in_box.filter((_, idx) => idx !== i));
+
+  // Additional images
+  const addImgUrl = () => {
+    if (!newImgUrl.trim()) return;
+    set('additionalImages', [...form.additionalImages, newImgUrl.trim()]);
+    setNewImgUrl('');
+  };
+  const removeImg = (i) => set('additionalImages', form.additionalImages.filter((_, idx) => idx !== i));
+
+  const uploadFile = async (file) => {
+    setUploading(true);
+    const ext = file.name.split('.').pop().toLowerCase();
+    const path = `manual/${form.slug || `product-${Date.now()}`}/${Date.now()}.${ext}`;
+    const { data, error } = await supabase.storage
+      .from('product-images')
+      .upload(path, file, { cacheControl: '3600', upsert: true });
+    setUploading(false);
+    if (error) { toast.error('Upload failed: ' + error.message); return; }
+    const url = supabase.storage.from('product-images').getPublicUrl(data.path).data.publicUrl;
+    set('primary_image_url', url);
+    toast.success('Image uploaded');
+  };
+
+  const handleSubmit = () => {
+    if (!form.name.trim()) { toast.error('Product name is required'); return; }
+    if (!form.brand_name) { toast.error('Brand is required'); return; }
+    if (!form.slug.trim()) { toast.error('Slug is required'); return; }
+    onSave(form);
+  };
+
+  const specEntries = Object.entries(form.specifications);
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div className="flex-1 bg-black/40" onClick={onClose} />
+      <div className="w-full max-w-2xl bg-white flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E2E8F0] bg-[#0A1628]">
+          <div>
+            <h2 className="font-bold text-white">{initialData ? 'Edit Product' : 'Add New Product'}</h2>
+            <p className="text-xs text-[#A0AEC0] mt-0.5">Fill in the details below. * fields are required.</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-md text-[#A0AEC0] hover:text-white hover:bg-white/10">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8 bg-[#F8F9FA]">
+
+          {/* ── Basic Info ── */}
+          <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
+            <SectionHeader title="Basic Information" />
+            <div className="space-y-4">
+              <FieldRow label="Product Name" required>
+                <input
+                  value={form.name}
+                  onChange={e => set('name', e.target.value)}
+                  className={inputCls}
+                  placeholder="e.g. Tenda AC23 AC2100 Dual-Band WiFi Router"
+                />
+              </FieldRow>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FieldRow label="Brand" required>
+                  <select
+                    value={form.brand_name}
+                    onChange={e => set('brand_name', e.target.value)}
+                    className={inputCls}
+                  >
+                    {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </FieldRow>
+                <FieldRow label="Model Number">
+                  <input
+                    value={form.model}
+                    onChange={e => set('model', e.target.value)}
+                    className={inputCls}
+                    placeholder="e.g. AC23"
+                  />
+                </FieldRow>
+              </div>
+
+              <FieldRow label="Category">
+                <input
+                  value={form.category_name}
+                  onChange={e => set('category_name', e.target.value)}
+                  className={inputCls}
+                  placeholder="e.g. Routers, Switches, IP Camera"
+                />
+              </FieldRow>
+
+              <FieldRow label="URL Slug" required>
+                <div className="flex gap-2">
+                  <input
+                    value={form.slug}
+                    onChange={e => { setSlugManual(true); set('slug', e.target.value); }}
+                    className={inputCls}
+                    placeholder="auto-generated-from-name"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setSlugManual(false); set('slug', toSlug(form.brand_name, form.name)); }}
+                    className="px-3 py-2 text-xs border border-[#E2E8F0] rounded-[6px] text-[#718096] hover:border-[#0A1628] whitespace-nowrap"
+                  >
+                    Auto
+                  </button>
+                </div>
+                <p className="text-[10px] text-[#718096] mt-1">Used in the product URL. Must be unique.</p>
+              </FieldRow>
+
+              <FieldRow label="Manufacturer / Product URL">
+                <input
+                  value={form.product_url}
+                  onChange={e => set('product_url', e.target.value)}
+                  className={inputCls}
+                  placeholder="https://www.manufacturer.com/product/..."
+                />
+              </FieldRow>
+            </div>
+          </div>
+
+          {/* ── Description ── */}
+          <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
+            <SectionHeader title="Description" />
+            <textarea
+              value={form.description}
+              onChange={e => set('description', e.target.value)}
+              rows={5}
+              className={`${inputCls} resize-none`}
+              placeholder="Describe what this product does, who it's for, and why customers should choose it. For B2B products, mention use cases (office, government, surveillance, etc.)"
+            />
+          </div>
+
+          {/* ── Key Features ── */}
+          <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
+            <SectionHeader title="Key Features" />
+            <div className="space-y-2 mb-3">
+              {form.key_features.map((f, i) => (
+                <div key={i} className="flex items-center gap-2 bg-[#F8F9FA] px-3 py-2 rounded-[6px] border border-[#E2E8F0]">
+                  <CheckCircle size={13} className="text-[#C9A84C] flex-shrink-0" />
+                  <span className="text-sm flex-1 text-[#0A1628]">{f}</span>
+                  <button onClick={() => removeFeature(i)} className={removeBtnCls}><X size={13} /></button>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={newFeature}
+                onChange={e => setNewFeature(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addFeature())}
+                className={inputCls}
+                placeholder="e.g. Dual-band AC2100 with MU-MIMO technology"
+              />
+              <button onClick={addFeature} className={addBtnCls}><Plus size={14} /></button>
+            </div>
+          </div>
+
+          {/* ── Specifications ── */}
+          <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
+            <SectionHeader title="Technical Specifications" />
+            {specEntries.length > 0 && (
+              <div className="border border-[#E2E8F0] rounded-[6px] overflow-hidden mb-3 divide-y divide-[#E2E8F0]">
+                {specEntries.map(([key, val]) => (
+                  <div key={key} className="flex items-center gap-0">
+                    <span className="px-3 py-2 text-xs font-semibold text-[#718096] w-40 flex-shrink-0 bg-[#F8F9FA] border-r border-[#E2E8F0]">{key}</span>
+                    <span className="px-3 py-2 text-sm text-[#0A1628] flex-1">{val}</span>
+                    <button onClick={() => removeSpec(key)} className={`${removeBtnCls} px-3`}><X size={13} /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                value={newSpecKey}
+                onChange={e => setNewSpecKey(e.target.value)}
+                className={inputCls}
+                placeholder="Parameter (e.g. Speed)"
+                style={{ width: '40%' }}
+              />
+              <input
+                value={newSpecVal}
+                onChange={e => setNewSpecVal(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSpec())}
+                className={inputCls}
+                placeholder="Value (e.g. 2100 Mbps)"
+              />
+              <button onClick={addSpec} className={addBtnCls}><Plus size={14} /></button>
+            </div>
+          </div>
+
+          {/* ── In The Box ── */}
+          <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
+            <SectionHeader title="In The Box" />
+            <div className="flex flex-wrap gap-2 mb-3">
+              {form.in_box.map((item, i) => (
+                <span key={i} className="flex items-center gap-1.5 px-2.5 py-1 bg-[#F8F9FA] border border-[#E2E8F0] rounded-full text-xs text-[#0A1628]">
+                  {item}
+                  <button onClick={() => removeBoxItem(i)} className="text-[#718096] hover:text-red-500"><X size={11} /></button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={newBoxItem}
+                onChange={e => setNewBoxItem(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addBoxItem())}
+                className={inputCls}
+                placeholder="e.g. Power Adapter, Ethernet Cable, Quick Guide"
+              />
+              <button onClick={addBoxItem} className={addBtnCls}><Plus size={14} /></button>
+            </div>
+          </div>
+
+          {/* ── Media / Images ── */}
+          <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
+            <SectionHeader title="Product Images" />
+
+            {/* Primary image */}
+            <FieldRow label="Primary Image">
+              <div className="flex gap-3 items-start">
+                <div className="flex-1 space-y-2">
+                  <input
+                    value={form.primary_image_url}
+                    onChange={e => set('primary_image_url', e.target.value)}
+                    className={inputCls}
+                    placeholder="https://... or upload below"
+                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => e.target.files[0] && uploadFile(e.target.files[0])}
+                    />
+                    <button
+                      onClick={() => fileRef.current?.click()}
+                      disabled={uploading}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-[#E2E8F0] rounded-[6px] text-[#4A5568] hover:border-[#0A1628] disabled:opacity-50"
+                    >
+                      <Upload size={13} /> {uploading ? 'Uploading…' : 'Upload Image'}
+                    </button>
+                    <span className="text-[10px] text-[#718096]">Uploads to Supabase Storage</span>
+                  </div>
+                </div>
+                {form.primary_image_url && (
+                  <img
+                    src={form.primary_image_url}
+                    alt="preview"
+                    className="w-20 h-20 object-contain border border-[#E2E8F0] rounded-[6px] bg-[#F8F9FA] flex-shrink-0"
+                  />
+                )}
+              </div>
+            </FieldRow>
+
+            {/* Additional images */}
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-[#0A1628] mb-2">Additional Images (Gallery)</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {form.additionalImages.map((url, i) => (
+                  <div key={i} className="relative group w-16 h-16">
+                    <img src={url} alt="" className="w-full h-full object-contain border border-[#E2E8F0] rounded-[6px] bg-[#F8F9FA]" />
+                    <button
+                      onClick={() => removeImg(i)}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={newImgUrl}
+                  onChange={e => setNewImgUrl(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addImgUrl())}
+                  className={inputCls}
+                  placeholder="Paste additional image URL..."
+                />
+                <button onClick={addImgUrl} className={addBtnCls}><Plus size={14} /></button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Settings ── */}
+          <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
+            <SectionHeader title="Settings & Visibility" />
+            <div className="space-y-3">
+              {[
+                { key: 'is_active', label: 'Active (visible on storefront)', desc: 'Show this product to customers' },
+                { key: 'is_b2b', label: 'B2B Product', desc: 'Suitable for bulk / government orders' },
+                { key: 'is_featured', label: 'Featured', desc: 'Show in highlighted sections and home page' },
+              ].map(({ key, label, desc }) => (
+                <label key={key} className="flex items-start gap-3 cursor-pointer p-3 rounded-[6px] hover:bg-[#F8F9FA] transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={form[key]}
+                    onChange={e => set(key, e.target.checked)}
+                    className="mt-0.5 accent-[#C9A84C]"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-[#0A1628]">{label}</p>
+                    <p className="text-xs text-[#718096]">{desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-[#E2E8F0] bg-white">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-[#4A5568] border border-[#E2E8F0] rounded-[6px] hover:border-[#0A1628]">
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-[#0A1628] rounded-[6px] hover:bg-[#1A2E4A] disabled:opacity-60 transition-colors"
+          >
+            <Save size={15} /> {saving ? 'Saving…' : (initialData ? 'Update Product' : 'Add Product')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
 const ProductsAdminPage = () => {
   const [products, setProducts] = useState([]);
   const [total, setTotal] = useState(0);
@@ -17,6 +461,10 @@ const ProductsAdminPage = () => {
   const [search, setSearch] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
   const [page, setPage] = useState(1);
+  const [showForm, setShowForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null); // null = new
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -26,43 +474,106 @@ const ProductsAdminPage = () => {
       .order('brand_name')
       .order('name')
       .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
-
     if (search) query = query.ilike('name', `%${search}%`);
     if (brandFilter) query = query.eq('brand_name', brandFilter);
-
     const { data, count, error } = await query;
-    if (error) {
-      toast.error('Failed to load products');
-    } else {
-      setProducts(data ?? []);
-      setTotal(count ?? 0);
-    }
+    if (error) toast.error('Failed to load products');
+    else { setProducts(data ?? []); setTotal(count ?? 0); }
     setLoading(false);
   }, [search, brandFilter, page]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
-  const toggleField = async (id, field, current) => {
-    const { error } = await supabase
-      .from('products')
-      .update({ [field]: !current })
-      .eq('id', id);
-    if (error) {
-      toast.error(`Failed to update ${field}`);
-    } else {
-      setProducts((prev) => prev.map((p) => p.id === id ? { ...p, [field]: !current } : p));
+  const openAdd = () => { setEditingProduct(null); setShowForm(true); };
+
+  const openEdit = async (id) => {
+    const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+    if (error) { toast.error('Failed to load product'); return; }
+    setEditingProduct(data);
+    setShowForm(true);
+  };
+
+  const handleSave = async (formData) => {
+    setSaving(true);
+    const images = [];
+    if (formData.primary_image_url) {
+      images.push({ url: formData.primary_image_url, is_primary: true });
     }
+    (formData.additionalImages || []).forEach(url => {
+      if (url && url !== formData.primary_image_url) {
+        images.push({ url, is_primary: false });
+      }
+    });
+
+    const payload = {
+      name: formData.name.trim(),
+      slug: formData.slug.trim(),
+      model: formData.model?.trim() || null,
+      brand_name: formData.brand_name,
+      category_name: formData.category_name?.trim() || null,
+      description: formData.description?.trim() || null,
+      key_features: formData.key_features.filter(Boolean),
+      specifications: formData.specifications,
+      in_box: formData.in_box.filter(Boolean),
+      primary_image_url: formData.primary_image_url?.trim() || null,
+      images,
+      product_url: formData.product_url?.trim() || null,
+      is_active: formData.is_active,
+      is_featured: formData.is_featured,
+      is_b2b: formData.is_b2b,
+      updated_at: new Date().toISOString(),
+    };
+
+    let error;
+    if (editingProduct) {
+      ({ error } = await supabase.from('products').update(payload).eq('id', editingProduct.id));
+    } else {
+      ({ error } = await supabase.from('products').insert({ ...payload, created_at: new Date().toISOString() }));
+    }
+
+    setSaving(false);
+    if (error) {
+      if (error.code === '23505') toast.error('Slug already in use — choose a different slug');
+      else toast.error('Save failed: ' + error.message);
+    } else {
+      toast.success(editingProduct ? 'Product updated' : 'Product added');
+      setShowForm(false);
+      setEditingProduct(null);
+      fetchProducts();
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    setDeleting(id);
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    setDeleting(null);
+    if (error) toast.error('Delete failed');
+    else { toast.success('Product deleted'); setProducts(p => p.filter(x => x.id !== id)); setTotal(t => t - 1); }
+  };
+
+  const toggleField = async (id, field, current) => {
+    const { error } = await supabase.from('products').update({ [field]: !current }).eq('id', id);
+    if (error) toast.error(`Failed to update`);
+    else setProducts(prev => prev.map(p => p.id === id ? { ...p, [field]: !current } : p));
   };
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[#0A1628]">Products</h1>
-          <p className="text-sm text-[#718096]">{total} total products in the catalog</p>
+          <p className="text-sm text-[#718096]">{total} products in catalog</p>
         </div>
+        <button
+          onClick={openAdd}
+          className="flex items-center gap-2 px-4 py-2 bg-[#0A1628] text-white text-sm font-semibold rounded-[6px] hover:bg-[#1A2E4A] transition-colors self-start sm:self-auto"
+        >
+          <Plus size={16} /> Add Product
+        </button>
       </div>
 
       {/* Filters */}
@@ -71,14 +582,14 @@ const ProductsAdminPage = () => {
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#718096]" />
           <input
             type="text"
-            placeholder="Search products..."
+            placeholder="Search products…"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
             className="w-full pl-9 pr-3 py-2 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C] bg-white"
           />
         </div>
-        <div className="flex gap-2">
-          {['', 'ENTER', 'TENDA', 'ZOOOK'].map((b) => (
+        <div className="flex gap-2 flex-wrap">
+          {['', 'ENTER', 'TENDA', 'ZOOOK'].map(b => (
             <button
               key={b}
               onClick={() => { setBrandFilter(b); setPage(1); }}
@@ -105,18 +616,18 @@ const ProductsAdminPage = () => {
                 <th className="px-4 py-3 font-semibold hidden sm:table-cell">Brand / Category</th>
                 <th className="px-4 py-3 font-semibold text-center">Active</th>
                 <th className="px-4 py-3 font-semibold text-center">Featured</th>
-                <th className="px-4 py-3 font-semibold text-right">View</th>
+                <th className="px-4 py-3 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F0F4F8]">
               {loading ? (
-                Array.from({ length: 8 }).map((_, i) => (
+                Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i}>
                     <td className="px-4 py-3"><Skeleton className="h-8 w-48" /></td>
                     <td className="px-4 py-3 hidden sm:table-cell"><Skeleton className="h-5 w-32" /></td>
                     <td className="px-4 py-3"><Skeleton className="h-6 w-10 mx-auto" /></td>
                     <td className="px-4 py-3"><Skeleton className="h-6 w-10 mx-auto" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-6 w-8 ml-auto" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-6 w-20 ml-auto" /></td>
                   </tr>
                 ))
               ) : products.length === 0 ? (
@@ -127,31 +638,24 @@ const ProductsAdminPage = () => {
                   </td>
                 </tr>
               ) : (
-                products.map((p) => (
+                products.map(p => (
                   <tr key={p.id} className="hover:bg-[#F8F9FA] transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 flex-shrink-0 bg-[#F8F9FA] rounded-[6px] border border-[#E2E8F0] flex items-center justify-center overflow-hidden">
-                          {p.primary_image_url ? (
-                            <img src={p.primary_image_url} alt={p.name} className="w-full h-full object-contain p-0.5" />
-                          ) : (
-                            <Package size={14} className="text-gray-300" />
-                          )}
+                          {p.primary_image_url
+                            ? <img src={p.primary_image_url} alt={p.name} className="w-full h-full object-contain p-0.5" />
+                            : <Package size={14} className="text-gray-300" />}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-[#0A1628] truncate max-w-[180px]">{p.name}</p>
+                          <p className="text-sm font-semibold text-[#0A1628] truncate max-w-[160px] sm:max-w-[200px]">{p.name}</p>
                           {p.model && <p className="text-[10px] text-[#718096]">{p.model}</p>}
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <div className="flex flex-col gap-0.5">
-                        <span
-                          className="text-[10px] font-bold tracking-wider"
-                          style={{ color: BRAND_COLORS[p.brand_name] ?? '#718096' }}
-                        >
-                          {p.brand_name}
-                        </span>
+                        <span className="text-[10px] font-bold tracking-wider" style={{ color: BRAND_COLORS[p.brand_name] ?? '#718096' }}>{p.brand_name}</span>
                         <span className="text-xs text-[#718096] truncate max-w-[120px]">{p.category_name}</span>
                       </div>
                     </td>
@@ -159,7 +663,7 @@ const ProductsAdminPage = () => {
                       <button
                         onClick={() => toggleField(p.id, 'is_active', p.is_active)}
                         className={`w-8 h-4 rounded-full transition-colors ${p.is_active ? 'bg-green-500' : 'bg-gray-300'}`}
-                        title={p.is_active ? 'Active — click to deactivate' : 'Inactive — click to activate'}
+                        title={p.is_active ? 'Active' : 'Inactive'}
                       >
                         <span className={`block w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform mx-auto ${p.is_active ? 'translate-x-2' : '-translate-x-2'}`} />
                       </button>
@@ -167,24 +671,37 @@ const ProductsAdminPage = () => {
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => toggleField(p.id, 'is_featured', p.is_featured)}
-                        title={p.is_featured ? 'Featured — click to unfeature' : 'Not featured — click to feature'}
+                        title={p.is_featured ? 'Featured' : 'Not featured'}
                       >
-                        <Star
-                          size={16}
-                          className={p.is_featured ? 'fill-[#C9A84C] text-[#C9A84C]' : 'text-gray-300 hover:text-[#C9A84C]'}
-                        />
+                        <Star size={16} className={p.is_featured ? 'fill-[#C9A84C] text-[#C9A84C]' : 'text-gray-300 hover:text-[#C9A84C]'} />
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link
-                        to={`/product/${p.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1.5 text-[#718096] hover:text-[#0A1628] transition-colors inline-block"
-                        title="View on storefront"
-                      >
-                        <ExternalLink size={14} />
-                      </Link>
+                      <div className="flex items-center justify-end gap-1">
+                        <Link
+                          to={`/product/${p.slug}`}
+                          target="_blank"
+                          className="p-1.5 text-[#718096] hover:text-[#0A1628] transition-colors"
+                          title="View on storefront"
+                        >
+                          <ExternalLink size={14} />
+                        </Link>
+                        <button
+                          onClick={() => openEdit(p.id)}
+                          className="p-1.5 text-[#718096] hover:text-blue-600 transition-colors"
+                          title="Edit product"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(p.id, p.name)}
+                          disabled={deleting === p.id}
+                          className="p-1.5 text-[#718096] hover:text-red-500 transition-colors disabled:opacity-40"
+                          title="Delete product"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -193,31 +710,33 @@ const ProductsAdminPage = () => {
           </table>
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-[#E2E8F0]">
-            <p className="text-xs text-[#718096]">
-              Page {page} of {totalPages} · {total} products
-            </p>
+            <p className="text-xs text-[#718096]">Page {page} of {totalPages} · {total} products</p>
             <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-3 py-1.5 text-xs border border-[#E2E8F0] rounded-[6px] text-[#4A5568] hover:border-[#0A1628] disabled:opacity-40"
-              >
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                className="px-3 py-1.5 text-xs border border-[#E2E8F0] rounded-[6px] text-[#4A5568] hover:border-[#0A1628] disabled:opacity-40">
                 Previous
               </button>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="px-3 py-1.5 text-xs border border-[#E2E8F0] rounded-[6px] text-[#4A5568] hover:border-[#0A1628] disabled:opacity-40"
-              >
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                className="px-3 py-1.5 text-xs border border-[#E2E8F0] rounded-[6px] text-[#4A5568] hover:border-[#0A1628] disabled:opacity-40">
                 Next
               </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* Product Form Drawer */}
+      {showForm && (
+        <ProductForm
+          key={editingProduct?.id ?? 'new'}
+          initialData={editingProduct}
+          onSave={handleSave}
+          onClose={() => { setShowForm(false); setEditingProduct(null); }}
+          saving={saving}
+        />
+      )}
     </div>
   );
 };
