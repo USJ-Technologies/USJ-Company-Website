@@ -9,7 +9,6 @@ import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
 const PAGE_SIZE = 30;
-const BRANDS = ['ENTER', 'TENDA', 'ZOOOK'];
 const BRAND_COLORS = { ENTER: '#1A56DB', TENDA: '#2D7D46', ZOOOK: '#C9A84C' };
 
 function toSlug(brand, name) {
@@ -75,6 +74,120 @@ function toFormData(p) {
     is_b2b: p.is_b2b ?? true,
     unit_price: p.unit_price != null ? String(p.unit_price) : '',
   };
+}
+
+// ── BrandCombobox ─────────────────────────────────────────────────────────────
+function BrandCombobox({ value, onChange }) {
+  const [brands, setBrands] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [newBrand, setNewBrand] = useState('');
+  const [saving, setSaving] = useState(false);
+  const containerRef = useRef(null);
+  const newInputRef = useRef(null);
+
+  useEffect(() => {
+    supabase.from('brands').select('id, name').order('name').then(({ data }) => {
+      if (data?.length) setBrands(data.map(b => b.name));
+    });
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+        setAdding(false);
+        setNewBrand('');
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  useEffect(() => {
+    if (adding && newInputRef.current) newInputRef.current.focus();
+  }, [adding]);
+
+  const handleAddBrand = async () => {
+    const name = newBrand.trim().toUpperCase();
+    if (!name) return;
+    if (brands.includes(name)) { onChange(name); setIsOpen(false); setAdding(false); setNewBrand(''); return; }
+    setSaving(true);
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const { error } = await supabase.from('brands').insert({ name, slug });
+    setSaving(false);
+    if (error) { toast.error('Failed to add brand: ' + error.message); return; }
+    setBrands(prev => [...prev, name].sort());
+    onChange(name);
+    setIsOpen(false);
+    setAdding(false);
+    setNewBrand('');
+    toast.success(`Brand "${name}" added`);
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(o => !o)}
+        className={`${inputCls} flex items-center justify-between text-left`}
+      >
+        <span className={value ? 'text-[#0A1628]' : 'text-[#A0AEC0]'}>{value || 'Select brand…'}</span>
+        <ChevronDown size={14} className={`text-[#718096] transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-[#E2E8F0] rounded-[8px] shadow-lg overflow-hidden">
+          <ul className="max-h-48 overflow-y-auto py-1">
+            {brands.map(b => (
+              <li key={b}>
+                <button
+                  type="button"
+                  onClick={() => { onChange(b); setIsOpen(false); }}
+                  className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-[#F8F9FA] ${value === b ? 'text-[#C9A84C] font-semibold bg-[#FFF8E7]' : 'text-[#0A1628]'}`}
+                >
+                  {b}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="border-t border-[#E2E8F0] p-2">
+            {adding ? (
+              <div className="flex gap-1.5">
+                <input
+                  ref={newInputRef}
+                  value={newBrand}
+                  onChange={e => setNewBrand(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddBrand(); } if (e.key === 'Escape') { setAdding(false); setNewBrand(''); } }}
+                  placeholder="Brand name (e.g. NETGEAR)"
+                  className="flex-1 px-2 py-1.5 text-xs border border-[#E2E8F0] rounded-[4px] focus:outline-none focus:ring-1 focus:ring-[#C9A84C]"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddBrand}
+                  disabled={saving || !newBrand.trim()}
+                  className="px-2.5 py-1.5 text-xs font-semibold bg-[#0A1628] text-white rounded-[4px] disabled:opacity-50"
+                >
+                  {saving ? '…' : 'Add'}
+                </button>
+                <button type="button" onClick={() => { setAdding(false); setNewBrand(''); }} className="px-2 py-1.5 text-xs text-[#718096] hover:text-[#0A1628]">
+                  <X size={12} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAdding(true)}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-[#1A56DB] hover:bg-[#EBF4FF] rounded-[6px] transition-colors"
+              >
+                <Plus size={13} /> Add new brand
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── ProductForm (top-level to avoid remount) ──────────────────────────────────
@@ -189,13 +302,7 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <FieldRow label="Brand" required>
-                  <select
-                    value={form.brand_name}
-                    onChange={e => set('brand_name', e.target.value)}
-                    className={inputCls}
-                  >
-                    {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-                  </select>
+                  <BrandCombobox value={form.brand_name} onChange={v => set('brand_name', v)} />
                 </FieldRow>
                 <FieldRow label="Model Number">
                   <input
@@ -482,6 +589,13 @@ const ProductsAdminPage = () => {
   const [editingProduct, setEditingProduct] = useState(null); // null = new
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [filterBrands, setFilterBrands] = useState([]);
+
+  useEffect(() => {
+    supabase.from('brands').select('name').order('name').then(({ data }) => {
+      if (data) setFilterBrands(data.map(b => b.name));
+    });
+  }, []);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -607,7 +721,7 @@ const ProductsAdminPage = () => {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {['', 'ENTER', 'TENDA', 'ZOOOK'].map(b => (
+          {['', ...filterBrands].map(b => (
             <button
               key={b}
               onClick={() => { setBrandFilter(b); setPage(1); }}

@@ -102,6 +102,10 @@ body {
   background-size: 32px 32px;
 }
 
+/* Hide scrollbar (used for horizontal scroll strips) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #f1f1f1; }

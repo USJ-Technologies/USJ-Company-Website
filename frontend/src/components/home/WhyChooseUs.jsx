@@ -1,50 +1,80 @@
-import { TrendingUp, Users, Package, MapPin } from 'lucide-react';
+import { TrendingUp, Users, Package, MapPin, ShieldCheck, Award, FileText, Truck, Star, MessageSquare, BadgeCheck, Globe } from 'lucide-react';
 import { APP_CONFIG } from '../../config/app';
+
+const trustSignals = [
+  { icon: BadgeCheck, label: 'GeM Registered Seller', sub: 'Verified on Govt. e-Marketplace' },
+  { icon: Award, label: 'Startup India Recognised', sub: 'DPIIT certified company' },
+  { icon: ShieldCheck, label: 'MSME / Udyam Certified', sub: 'Ministry of MSME registered' },
+  { icon: Package, label: 'Genuine OEM Products', sub: 'Authorised distributor only' },
+  { icon: Truck, label: 'Pan-India B2B Delivery', sub: 'Fast shipping with tracking' },
+  { icon: FileText, label: 'GST Tax Invoice', sub: 'Full compliance for govt. orders' },
+  { icon: Star, label: 'Bulk Order Pricing', sub: 'Special rates for large volumes' },
+  { icon: MessageSquare, label: 'Dedicated Support', sub: 'Pre & post-sales assistance' },
+  { icon: Globe, label: 'GeM Tender Support', sub: 'Bid facilitation & compliance' },
+];
 
 export default function WhyChooseUs() {
   const { stats } = APP_CONFIG;
 
   const statItems = [
-    { icon: TrendingUp, value: stats.projects, label: 'Projects Delivered', suffix: '' },
-    { icon: Users, value: stats.clients, label: 'Government Clients', suffix: '' },
-    { icon: Package, value: stats.products, label: 'Products', suffix: '' },
-    { icon: MapPin, value: stats.states, label: 'States Served', suffix: '' },
+    { icon: TrendingUp, value: stats.projects, label: 'Projects Delivered' },
+    { icon: Users, value: stats.clients, label: 'Government Clients' },
+    { icon: Package, value: stats.products, label: 'Products' },
+    { icon: MapPin, value: stats.states, label: 'States Served' },
   ];
 
   return (
-    <section className="section-py" style={{ backgroundColor: '#0A1628' }}>
+    <section className="section-py" style={{ backgroundColor: '#060F1E' }}>
       <div className="container-max">
+
         {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-14">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-px mb-14"
+          style={{ backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 16, overflow: 'hidden' }}>
           {statItems.map(({ icon: Icon, value, label }) => (
-            <div key={label} className="text-center">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3"
-                style={{ backgroundColor: 'rgba(201,168,76,0.15)' }}
-              >
-                <Icon size={20} className="text-[#C9A84C]" />
+            <div key={label} className="flex flex-col items-center text-center py-8 px-4" style={{ backgroundColor: '#060F1E' }}>
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3"
+                style={{ backgroundColor: 'rgba(201,168,76,0.12)' }}>
+                <Icon size={17} className="text-[#C9A84C]" />
               </div>
-              <p className="text-3xl font-bold text-[#C9A84C] mb-1">{value}</p>
-              <p className="text-sm text-[#A0AEC0]">{label}</p>
+              <p className="text-3xl font-black text-white mb-0.5 tracking-tight">{value}</p>
+              <p className="text-xs text-[#64748B]">{label}</p>
             </div>
           ))}
         </div>
 
-        {/* Values paragraph */}
-        <div className="max-w-3xl mx-auto text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#C9A84C] mb-3">
-            Why Choose Us
-          </p>
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-5">
-            Technology with Trust & Compliance
+        {/* Headline */}
+        <div className="max-w-2xl mb-10">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#C9A84C] mb-3">Why Choose Us</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
+            Technology with Trust,<br className="hidden sm:block" /> Compliance & Reliability
           </h2>
-          <p className="text-base text-[#A0AEC0] leading-relaxed mb-5">
-            USJ Technologies is built on a foundation of integrity, compliance, and a genuine passion for India's growth. Every project we undertake is backed by rigorous quality standards, government-grade security, and an unwavering commitment to our clients.
-          </p>
-          <p className="text-sm text-[#718096] leading-relaxed">
-            From GeM registration to Startup India certification, we walk every step of the regulatory journey with you — making procurement simple, transparent, and reliable.
-          </p>
         </div>
+
+        {/* Trust signals grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {trustSignals.map(({ icon: Icon, label, sub }) => (
+            <div
+              key={label}
+              className="flex items-center gap-4 px-5 py-4 rounded-xl transition-colors duration-150"
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.07)',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(201,168,76,0.07)'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.25)'; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; }}
+            >
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: 'rgba(201,168,76,0.12)' }}>
+                <Icon size={17} className="text-[#C9A84C]" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white leading-tight">{label}</p>
+                <p className="text-xs text-[#64748B] mt-0.5">{sub}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
       </div>
     </section>
   );

@@ -1,70 +1,108 @@
 import { Link } from 'react-router-dom';
-import { Shield, Cpu, FileText, ArrowRight } from 'lucide-react';
-import SectionHeader from '../ui/SectionHeader';
-import Card from '../ui/Card';
-import { ROUTES } from '../../config/app';
+import { ArrowRight } from 'lucide-react';
+import { APP_CONFIG, ROUTES } from '../../config/app';
 
 const services = [
   {
-    icon: Shield,
-    title: 'Government & Defence Solutions',
+    number: '01',
+    title: 'Government & Defence Procurement',
     description:
-      'End-to-end technology solutions for government and defence procurement — GeM registered, security-compliant, trusted by departments across India.',
+      'End-to-end technology supply for government departments, defence establishments, and paramilitary forces — GeM registered, security-compliant, and trusted across Uttarakhand and beyond.',
     link: ROUTES.SERVICES,
+    tag: 'GeM · B2B',
   },
   {
-    icon: Cpu,
-    title: 'Technology Products & Electronics',
+    number: '02',
+    title: 'Electronics & Networking Products',
     description:
-      'Quality electronics and tech products including surveillance systems, networking equipment, power solutions, and more — sourced and supplied with full compliance.',
+      'Surveillance systems, networking gear, power solutions, and IT peripherals from leading brands — sourced from authorised distributors with GST invoice and full after-sales support.',
     link: ROUTES.SHOP,
+    tag: '700+ Products',
   },
   {
-    icon: FileText,
-    title: 'GeM Tender Projects',
+    number: '03',
+    title: 'GeM Tender & Project Execution',
     description:
-      'Expert navigation of Government e-Marketplace with successful tender bids, procurement facilitation, and end-to-end compliance management.',
+      'Expert navigation of the Government e-Marketplace with successful tender bids, procurement facilitation, end-to-end installation, and compliance management for institutional buyers.',
     link: ROUTES.PROJECTS,
+    tag: '50+ Projects',
   },
 ];
 
 export default function WhatWeDo() {
+  const { stats } = APP_CONFIG;
+
   return (
     <section className="section-py bg-white">
       <div className="container-max">
-        <SectionHeader
-          label="WHAT WE DO"
-          title="Comprehensive Technology Solutions"
-          subtitle="From government procurement to digital ventures — USJ Technologies is your trusted technology partner."
-          align="center"
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-[5fr_7fr] gap-12 lg:gap-20 items-start">
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {services.map(({ icon: Icon, title, description, link }) => (
-            <Card
-              key={title}
-              className="p-6 group"
-              hover
-            >
-              {/* Icon circle */}
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors duration-200 group-hover:bg-[#C9A84C]"
-                style={{ backgroundColor: '#0A1628' }}
-              >
-                <Icon size={22} className="text-white" />
+          {/* Left — sticky intro */}
+          <div className="lg:sticky lg:top-24">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#C9A84C] mb-4">
+              What We Do
+            </p>
+            <h2 className="text-3xl lg:text-[2.4rem] font-bold text-[#0A1628] leading-tight mb-5">
+              Technology Solutions<br />Built for India
+            </h2>
+            <p className="text-[#4A5568] leading-relaxed text-sm mb-8 max-w-sm">
+              USJ Technologies is Dehradun's trusted B2B technology partner — serving government, defence, and commercial buyers with quality products and expert procurement support.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: stats.projects, label: 'Projects Delivered' },
+                { value: stats.products, label: 'Products in Catalog' },
+                { value: stats.clients, label: 'Govt. Clients', span: false },
+                { value: stats.states, label: 'States Served' },
+              ].map(({ value, label }) => (
+                <div
+                  key={label}
+                  className="p-4 rounded-xl"
+                  style={{ backgroundColor: '#F4F7FB', border: '1px solid #E8EEF6' }}
+                >
+                  <p className="text-2xl font-bold text-[#0A1628]">{value}</p>
+                  <p className="text-xs text-[#718096] mt-0.5">{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right — service rows */}
+          <div className="divide-y divide-[#EEF2F8]">
+            {services.map(({ number, title, description, link, tag }) => (
+              <div key={number} className="py-8 group cursor-default">
+                <div className="flex gap-5 items-start">
+                  <span
+                    className="text-[2.2rem] font-black leading-none mt-0.5 flex-shrink-0 select-none transition-colors duration-200"
+                    style={{ color: '#E8EEF6', letterSpacing: '-0.02em' }}
+                    onMouseEnter={e => { e.target.style.color = '#C9A84C'; }}
+                    onMouseLeave={e => { e.target.style.color = '#E8EEF6'; }}
+                  >
+                    {number}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-[1.05rem] font-bold text-[#0A1628] group-hover:text-[#C9A84C] transition-colors duration-200">
+                        {title}
+                      </h3>
+                      <span className="hidden sm:inline text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F4F7FB] text-[#718096] border border-[#E8EEF6] flex-shrink-0">
+                        {tag}
+                      </span>
+                    </div>
+                    <p className="text-sm text-[#64748B] leading-relaxed mb-4">{description}</p>
+                    <Link
+                      to={link}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A1628] hover:text-[#C9A84C] transition-colors uppercase tracking-wide"
+                    >
+                      Learn More <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  </div>
+                </div>
               </div>
+            ))}
+          </div>
 
-              <h3 className="text-base font-bold text-[#0A1628] mb-2">{title}</h3>
-              <p className="text-sm text-[#4A5568] leading-relaxed mb-4">{description}</p>
-
-              <Link
-                to={link}
-                className="inline-flex items-center gap-1 text-sm font-semibold text-[#C9A84C] hover:text-[#B8973B] transition-colors"
-              >
-                Learn More <ArrowRight size={14} />
-              </Link>
-            </Card>
-          ))}
         </div>
       </div>
     </section>
