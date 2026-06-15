@@ -626,16 +626,11 @@ const ProductsAdminPage = () => {
 
   const handleSave = async (formData) => {
     setSaving(true);
-    const images = [];
-    if (formData.primary_image_url) {
-      images.push({ url: formData.primary_image_url, is_primary: true });
-    }
-    (formData.additionalImages || []).forEach(url => {
-      if (url && url !== formData.primary_image_url) {
-        images.push({ url, is_primary: false });
-      }
-    });
 
+    // Generate ID client-side so we can sync product_images without a SELECT round-trip
+    const productId = editingProduct?.id ?? crypto.randomUUID();
+
+    // NOTE: 'images' is NOT a column on products — images live in the product_images table
     const payload = {
       name: formData.name.trim(),
       slug: formData.slug.trim(),
@@ -647,7 +642,6 @@ const ProductsAdminPage = () => {
       specifications: formData.specifications,
       in_box: formData.in_box.filter(Boolean),
       primary_image_url: formData.primary_image_url?.trim() || null,
-      images,
       product_url: formData.product_url?.trim() || null,
       is_active: formData.is_active,
       is_featured: formData.is_featured,
@@ -658,21 +652,41 @@ const ProductsAdminPage = () => {
 
     let error;
     if (editingProduct) {
-      ({ error } = await supabase.from('products').update(payload).eq('id', editingProduct.id));
+      ({ error } = await supabase.from('products').update(payload).eq('id', productId));
     } else {
-      ({ error } = await supabase.from('products').insert({ ...payload, created_at: new Date().toISOString() }));
+      ({ error } = await supabase.from('products').insert({ id: productId, ...payload, created_at: new Date().toISOString() }));
+    }
+
+    if (error) {
+      setSaving(false);
+      if (error.code === '23505') toast.error('Slug already in use — choose a different slug');
+      else toast.error('Save failed: ' + error.message);
+      return;
+    }
+
+    // Sync product_images table separately
+    const imageRows = [];
+    if (formData.primary_image_url?.trim()) {
+      imageRows.push({ product_id: productId, url: formData.primary_image_url.trim(), is_primary: true, display_order: 0 });
+    }
+    (formData.additionalImages || []).forEach((url, i) => {
+      if (url && url !== formData.primary_image_url) {
+        imageRows.push({ product_id: productId, url, is_primary: false, display_order: i + 1 });
+      }
+    });
+
+    // Delete existing image rows then re-insert (simple upsert pattern)
+    await supabase.from('product_images').delete().eq('product_id', productId);
+    if (imageRows.length > 0) {
+      const { error: imgError } = await supabase.from('product_images').insert(imageRows);
+      if (imgError) console.warn('product_images sync warning:', imgError.message);
     }
 
     setSaving(false);
-    if (error) {
-      if (error.code === '23505') toast.error('Slug already in use — choose a different slug');
-      else toast.error('Save failed: ' + error.message);
-    } else {
-      toast.success(editingProduct ? 'Product updated' : 'Product added');
-      setShowForm(false);
-      setEditingProduct(null);
-      fetchProducts();
-    }
+    toast.success(editingProduct ? 'Product updated' : 'Product added');
+    setShowForm(false);
+    setEditingProduct(null);
+    fetchProducts();
   };
 
   const handleDelete = async (id, name) => {

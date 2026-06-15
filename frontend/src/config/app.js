@@ -72,7 +72,7 @@ export const ROUTES = {
   CAREERS: '/careers',
   CONTACT: '/contact',
   SHOP: '/shop',
-  PRODUCT_DETAIL: (slug) => `/shop/product/${slug}`,
+  PRODUCT_DETAIL: (slug) => `/product/${slug}`,
   CART: '/cart',
   CHECKOUT: '/checkout',
   ORDERS: '/orders',
