@@ -9,7 +9,7 @@ const AdminRoute = ({ children }) => {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  if (!isAuthenticated || profile?.role !== 'admin') {
+  if (!isAuthenticated || !['admin', 'manager', 'staff'].includes(profile?.role)) {
     return <Navigate to="/" replace />;
   }
 

@@ -145,7 +145,7 @@ export default function Navbar() {
                     <Link to={ROUTES.ORDERS} className="flex items-center gap-2 px-4 py-2 text-sm text-[#0A1628] hover:bg-gray-50">
                       <Package size={15} /> My Orders
                     </Link>
-                    {profile?.role === 'admin' && (
+                    {['admin', 'manager', 'staff'].includes(profile?.role) && (
                       <Link to={ROUTES.ADMIN_DASHBOARD} className="flex items-center gap-2 px-4 py-2 text-sm text-[#0A1628] hover:bg-gray-50">
                         <Settings size={15} /> Admin Panel
                       </Link>

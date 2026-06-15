@@ -3,9 +3,23 @@
 -- Run this in Supabase SQL Editor to seed ventures & certifications
 -- ============================================================
 
--- Add unique constraint so upsert works on future seed runs
-ALTER TABLE ventures        ADD CONSTRAINT ventures_name_unique        UNIQUE (name);
-ALTER TABLE certifications  ADD CONSTRAINT certifications_name_unique  UNIQUE (name);
+-- Add unique constraints (idempotent — safe to re-run if already applied manually)
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'ventures_name_unique'
+      AND conrelid = 'ventures'::regclass
+  ) THEN
+    ALTER TABLE ventures ADD CONSTRAINT ventures_name_unique UNIQUE (name);
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'certifications_name_unique'
+      AND conrelid = 'certifications'::regclass
+  ) THEN
+    ALTER TABLE certifications ADD CONSTRAINT certifications_name_unique UNIQUE (name);
+  END IF;
+END $$;
 
 -- ── Ventures ─────────────────────────────────────────────────
 

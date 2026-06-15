@@ -1,13 +1,7 @@
-/**
- * Cart store — works for both guests and signed-in users.
- *
- * Guests:  all state in localStorage, no DB calls.
- * Signed-in: localStorage is the source of truth during a session;
- *            DB is synced on login (merge) and can be used for persistence.
- */
-
 import { create } from 'zustand';
 import toast from 'react-hot-toast';
+import { upsertCartItem, removeCartItem, updateCartItemQty } from '../lib/queries';
+import useAuthStore from './authStore';
 
 const CART_KEY = 'usj_cart';
 
@@ -23,40 +17,47 @@ const saveToStorage = (items) => {
   localStorage.setItem(CART_KEY, JSON.stringify(items));
 };
 
+const getUserId = () => useAuthStore.getState().user?.id ?? null;
+
 const useCartStore = create((set, get) => ({
   items: loadFromStorage(),
 
-  // ── Derived values ────────────────────────────────────────
-  get itemCount() {
-    return get().items.reduce((acc, item) => acc + item.qty, 0);
-  },
+  itemCount: () => get().items.reduce((acc, item) => acc + item.qty, 0),
 
-  // ── Add or increment ──────────────────────────────────────
   addItem: (product, qty = 1) => {
     const items = get().items;
     const existing = items.find((i) => i.product.id === product.id);
     let newItems;
+    let newQty;
     if (existing) {
+      newQty = existing.qty + qty;
       newItems = items.map((i) =>
-        i.product.id === product.id ? { ...i, qty: i.qty + qty } : i
+        i.product.id === product.id ? { ...i, qty: newQty } : i
       );
     } else {
+      newQty = qty;
       newItems = [...items, { product, qty }];
     }
     saveToStorage(newItems);
     set({ items: newItems });
+
+    const userId = getUserId();
+    if (userId) upsertCartItem(userId, product.id, newQty).catch(console.warn);
+
     toast.success(`${product.name} added to cart`);
   },
 
-  // ── Remove one product ────────────────────────────────────
   removeItem: (productId) => {
     const newItems = get().items.filter((i) => i.product.id !== productId);
     saveToStorage(newItems);
     set({ items: newItems });
+
+    const userId = getUserId();
+    if (userId) removeCartItem(userId, productId).catch(console.warn);
+
     toast.success('Item removed');
   },
 
-  // ── Set exact quantity ────────────────────────────────────
   updateQty: (productId, qty) => {
     if (qty < 1) {
       get().removeItem(productId);
@@ -67,21 +68,22 @@ const useCartStore = create((set, get) => ({
     );
     saveToStorage(newItems);
     set({ items: newItems });
+
+    const userId = getUserId();
+    if (userId) updateCartItemQty(userId, productId, qty).catch(console.warn);
   },
 
-  // ── Clear entire cart ─────────────────────────────────────
   clearCart: () => {
     localStorage.removeItem(CART_KEY);
     set({ items: [] });
   },
 
-  // ── Merge guest cart with DB cart on login ────────────────
   mergeWithDb: (dbItems) => {
     const localItems = get().items;
     const merged = [...localItems];
 
     for (const dbItem of dbItems) {
-      const product = dbItem.products; // joined via select
+      const product = dbItem.products;
       if (!product) continue;
       const existing = merged.find((i) => i.product.id === product.id);
       if (existing) {

@@ -72,7 +72,7 @@ export const ROUTES = {
   CAREERS: '/careers',
   CONTACT: '/contact',
   SHOP: '/shop',
-  PRODUCT_DETAIL: (slug) => `/shop/product/${slug}`,
+  PRODUCT_DETAIL: (slug) => `/product/${slug}`,
   CART: '/cart',
   CHECKOUT: '/checkout',
   ORDERS: '/orders',
@@ -88,4 +88,5 @@ export const ROUTES = {
   ADMIN_VENTURES: '/admin/ventures',
   ADMIN_CERTIFICATIONS: '/admin/certifications',
   ADMIN_TEAM: '/admin/team',
+  ADMIN_ACCESS_CONTROL: '/admin/access-control',
 };

@@ -85,10 +85,11 @@ export default function ProfilePage() {
             <div className="text-center sm:text-left flex-1">
               <h1 className="text-2xl font-bold text-white mb-1">{displayName}</h1>
               <p className="text-[#A0AEC0] text-sm">{user?.email}</p>
-              {profile?.role === 'admin' && (
+              {['admin', 'manager', 'staff'].includes(profile?.role) && (
                 <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs font-bold"
                   style={{ backgroundColor: 'rgba(201,168,76,0.2)', color: '#C9A84C' }}>
-                  <ShieldCheck size={12} /> Administrator
+                  <ShieldCheck size={12} />
+                  {{ admin: 'Administrator', manager: 'Manager', staff: 'Staff' }[profile.role]}
                 </span>
               )}
             </div>

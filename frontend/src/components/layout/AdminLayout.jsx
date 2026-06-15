@@ -2,22 +2,25 @@ import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, Package, MessageSquare,
-  Building2, Award, Menu, X, LogOut, ChevronRight, Users,
+  Building2, Award, Menu, X, LogOut, ChevronRight, Users, Shield,
 } from 'lucide-react';
 import { ROUTES } from '../../config/app';
 import useAuthStore from '../../store/authStore';
 
-const NAV_ITEMS = [
-  { label: 'Dashboard', to: ROUTES.ADMIN_DASHBOARD, icon: LayoutDashboard },
-  { label: 'Inquiries', to: ROUTES.ADMIN_INQUIRIES, icon: MessageSquare },
-  { label: 'Products', to: ROUTES.ADMIN_PRODUCTS, icon: Package },
-  { label: 'Team', to: ROUTES.ADMIN_TEAM, icon: Users },
-  { label: 'Ventures', to: ROUTES.ADMIN_VENTURES, icon: Building2 },
-  { label: 'Certifications', to: ROUTES.ADMIN_CERTIFICATIONS, icon: Award },
+const ALL_NAV_ITEMS = [
+  { label: 'Dashboard',      to: ROUTES.ADMIN_DASHBOARD,      icon: LayoutDashboard, roles: ['admin', 'manager', 'staff'] },
+  { label: 'Inquiries',      to: ROUTES.ADMIN_INQUIRIES,      icon: MessageSquare,   roles: ['admin', 'manager', 'staff'] },
+  { label: 'Products',       to: ROUTES.ADMIN_PRODUCTS,       icon: Package,         roles: ['admin', 'manager'] },
+  { label: 'Certifications', to: ROUTES.ADMIN_CERTIFICATIONS, icon: Award,           roles: ['admin', 'manager'] },
+  { label: 'Team',           to: ROUTES.ADMIN_TEAM,           icon: Users,           roles: ['admin'] },
+  { label: 'Ventures',       to: ROUTES.ADMIN_VENTURES,       icon: Building2,       roles: ['admin'] },
+  { label: 'Access Control', to: ROUTES.ADMIN_ACCESS_CONTROL, icon: Shield,          roles: ['admin'] },
 ];
 
+const ROLE_LABEL = { admin: 'Admin', manager: 'Manager', staff: 'Staff' };
+
 // Sidebar must be defined OUTSIDE AdminLayout to prevent remount on every render
-function Sidebar({ user, onClose }) {
+function Sidebar({ user, navItems, onClose }) {
   const location = useLocation();
   const { logout } = useAuthStore();
   const isActive = (to) => location.pathname === to || location.pathname.startsWith(to + '/');
@@ -33,7 +36,7 @@ function Sidebar({ user, onClose }) {
       </div>
 
       <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
-        {NAV_ITEMS.map(({ label, to, icon: Icon }) => (
+        {navItems.map(({ label, to, icon: Icon }) => (
           <Link
             key={to}
             to={to}
@@ -53,13 +56,15 @@ function Sidebar({ user, onClose }) {
 
       <div className="px-3 py-4 border-t" style={{ borderColor: '#1A2E4A' }}>
         <div className="flex items-center gap-2 px-3 mb-3">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
             style={{ backgroundColor: '#C9A84C', color: '#0A1628' }}>
             {user?.name?.[0] || 'A'}
           </div>
-          <div>
-            <p className="text-sm font-medium text-white">{user?.name || 'Admin'}</p>
-            <p className="text-xs text-[#4A5568] truncate max-w-[120px]">{user?.email}</p>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-white truncate">{user?.name || 'Admin'}</p>
+            <p className="text-xs text-[#4A5568] truncate">
+              {ROLE_LABEL[user?.role] ?? 'Admin'} · {user?.email}
+            </p>
           </div>
         </div>
         <button
@@ -76,17 +81,24 @@ function Sidebar({ user, onClose }) {
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
 
-  const currentPage = NAV_ITEMS.find(
+  const role = profile?.role ?? 'admin';
+  const navItems = ALL_NAV_ITEMS.filter((item) => item.roles.includes(role));
+
+  // Use ALL_NAV_ITEMS for title detection (works even for pages not in filtered nav)
+  const currentPage = ALL_NAV_ITEMS.find(
     (n) => location.pathname === n.to || location.pathname.startsWith(n.to + '/')
   );
+
+  // Merge user + profile for sidebar display
+  const sidebarUser = { ...user, role, name: profile?.name ?? user?.email };
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F8F9FA]">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex flex-shrink-0">
-        <Sidebar user={user} onClose={undefined} />
+      <div className="hidden lg:flex shrink-0">
+        <Sidebar user={sidebarUser} navItems={navItems} onClose={undefined} />
       </div>
 
       {/* Mobile Sidebar Overlay */}
@@ -94,7 +106,7 @@ export default function AdminLayout() {
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
           <div className="absolute left-0 top-0 bottom-0">
-            <Sidebar user={user} onClose={() => setSidebarOpen(false)} />
+            <Sidebar user={sidebarUser} navItems={navItems} onClose={() => setSidebarOpen(false)} />
           </div>
         </div>
       )}
@@ -103,7 +115,7 @@ export default function AdminLayout() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
         <header
-          className="flex-shrink-0 flex items-center justify-between px-6 py-4 bg-white border-b border-[#E2E8F0]"
+          className="shrink-0 flex items-center justify-between px-6 py-4 bg-white border-b border-[#E2E8F0]"
           style={{ height: 64 }}
         >
           <div className="flex items-center gap-3">
@@ -132,7 +144,7 @@ export default function AdminLayout() {
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
               style={{ backgroundColor: '#C9A84C', color: '#0A1628' }}
             >
-              {user?.name?.[0] || 'A'}
+              {profile?.name?.[0] || 'A'}
             </div>
           </div>
         </header>
