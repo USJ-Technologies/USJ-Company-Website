@@ -23,7 +23,7 @@ export async function getProducts({
     .select('id, name, slug, brand_name, category_name, primary_image_url, is_b2b, is_featured, model, unit_price', { count: 'exact' })
     .eq('is_active', true)
     .order('is_featured', { ascending: false })
-    .order('created_at', { ascending: false })
+    .order('id', { ascending: true })
     .range((page - 1) * limit, page * limit - 1);
 
   if (search) {
