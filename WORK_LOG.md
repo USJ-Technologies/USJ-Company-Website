@@ -4,6 +4,49 @@ All completed development work across sessions. Most recent changes at top.
 
 ---
 
+## Session 4 — 2026-06-15
+
+### Features Added
+
+#### 9. Role-Based Access Control (RBAC)
+**Files:**
+- `supabase/migrations/20240615000012_rbac.sql` — DB schema changes
+- `frontend/src/pages/admin/AccessControlAdminPage.jsx` — New admin page
+- `frontend/src/components/layout/AdminLayout.jsx` — Role-filtered sidebar nav
+- `frontend/src/components/layout/AdminRoute.jsx` — Allow manager/staff in admin
+- `frontend/src/store/authStore.js` — Added `hasRole()` helper
+- `frontend/src/config/app.js` — Added `ADMIN_ACCESS_CONTROL` route
+- `frontend/src/App.jsx` — Added `/admin/access-control` route
+
+**What was built:**
+- New `invited_roles` DB table: admin pre-assigns a role (admin/manager/staff) to an email
+- Updated `handle_new_user` Postgres trigger: on registration, checks `invited_roles` and auto-applies the role to `profiles`
+- New helper SQL functions: `is_manager_or_above()`, `is_staff_or_above()`
+- Extended `profiles.role` CHECK constraint from `('customer','admin')` to `('customer','admin','manager','staff')`
+- New RLS policies: staff/manager can read & update all quote_requests; managers can manage products/images/brands/categories/certifications; admins can update all profiles
+- **Access Control page** (`/admin/access-control`): shows pre-assigned roles list + registered team members with current roles; allows adding/editing/removing role assignments; immediately updates existing profiles
+- Sidebar nav is now role-filtered: admin sees all pages; manager sees Dashboard/Inquiries/Products/Certifications; staff sees Dashboard/Inquiries only
+- Staff and managers can log in to `/admin` with appropriate scoped access
+
+**Roles defined:**
+| Role | Access |
+|------|--------|
+| `admin` | Full access to all admin pages |
+| `manager` | Dashboard, Inquiries, Products, Certifications |
+| `staff` | Dashboard, Inquiries only |
+| `customer` | Public site only |
+
+**Action required:** Run migration 012 in Supabase SQL Editor.
+
+#### 10. Phone Number in Quote/Inquiry Admin View
+**File:** `frontend/src/pages/admin/InquiriesAdminPage.jsx`
+- Added `Phone` icon import from lucide-react
+- Phone number now displays in the quote card header alongside email and organization
+- Uses separator dot (`·`) for clean inline display
+- Data was already being captured (`quote_requests.phone` column exists) — just wasn't being shown
+
+---
+
 ## Session 3 — 2026-06-15
 
 ### Bug Fixes
@@ -127,4 +170,5 @@ Category-specific descriptions and key_features for all 16 Tenda product categor
 | Migration 009 | Run `20240614000009_tenda_key_features_fix.sql` |
 | Migration 010 | Run `20240614000010_product_pricing.sql` |
 | Migration 011 | Run `20240615000011_storage_policies.sql` |
+| Migration 012 | Run `20240615000012_rbac.sql` — **required for RBAC to work** |
 | admin_setup.sql | Ensure admin role is set for all team emails |

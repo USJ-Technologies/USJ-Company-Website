@@ -76,21 +76,47 @@ export default function CertificationsAdminPage() {
     setForm(EMPTY_FORM);
   };
 
+  const compressImage = (file) => new Promise((resolve) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX_W = 1400;
+      let { width, height } = img;
+      if (width > MAX_W) {
+        height = Math.round((height * MAX_W) / width);
+        width = MAX_W;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          URL.revokeObjectURL(objectUrl);
+          resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+        },
+        'image/jpeg',
+        0.82,
+      );
+    };
+    img.src = objectUrl;
+  });
+
   const uploadImage = async (file) => {
     const ext = file.name.split('.').pop().toLowerCase();
-    const allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
-    if (!allowed.includes(ext)) {
-      toast.error('Only JPG, PNG, WEBP, or PDF files allowed');
+    if (!['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+      toast.error('Only image files (JPG, PNG, WEBP) are allowed');
       return;
     }
 
     setUploading(true);
-    const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const compressed = await compressImage(file);
+    const filename = `${Date.now()}-${compressed.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     const path = `${CERT_PATH}/${filename}`;
 
     const { data, error } = await supabase.storage
       .from(BUCKET)
-      .upload(path, file, { cacheControl: '3600', upsert: false });
+      .upload(path, compressed, { cacheControl: '3600', upsert: false });
 
     if (error) {
       toast.error('Upload failed: ' + error.message);
@@ -364,7 +390,7 @@ export default function CertificationsAdminPage() {
                     {uploading ? (
                       <><Loader2 size={20} className="animate-spin text-[#C9A84C] mx-auto mb-2" /><p className="text-xs text-[#718096]">Uploading...</p></>
                     ) : (
-                      <><Upload size={20} className="text-[#A0AEC0] mx-auto mb-2" /><p className="text-xs text-[#718096]">Click to upload JPG, PNG, or PDF</p><p className="text-[10px] text-[#A0AEC0] mt-1">Stored in Supabase Storage</p></>
+                      <><Upload size={20} className="text-[#A0AEC0] mx-auto mb-2" /><p className="text-xs text-[#718096]">Click to upload JPG, PNG, or WEBP</p><p className="text-[10px] text-[#A0AEC0] mt-1">Auto-compressed before upload</p></>
                     )}
                   </button>
                 )}
@@ -381,7 +407,7 @@ export default function CertificationsAdminPage() {
                 <input
                   ref={fileRef}
                   type="file"
-                  accept="image/*,.pdf"
+                  accept="image/*"
                   className="hidden"
                   onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f); e.target.value = ''; }}
                 />

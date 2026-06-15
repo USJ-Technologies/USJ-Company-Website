@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import Badge from '../../components/ui/Badge';
 import Skeleton from '../../components/ui/Skeleton';
-import { Mail, FileText, Package, ChevronDown, ChevronUp } from 'lucide-react';
+import { Mail, Phone, FileText, Package, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const STATUS_OPTIONS = ['new', 'in_review', 'responded', 'closed'];
@@ -119,9 +119,12 @@ const InquiriesAdminPage = () => {
                         {q.status?.replace('_', ' ')}
                       </Badge>
                     </div>
-                    <p className="text-xs text-[#718096] flex items-center gap-1 mt-0.5">
+                    <p className="text-xs text-[#718096] flex items-center gap-1 mt-0.5 flex-wrap">
                       <Mail size={11} /> {q.email}
-                      {q.organization && <> · {q.organization}</>}
+                      {q.phone && (
+                        <><span className="text-[#CBD5E0]">·</span><Phone size={11} />{q.phone}</>
+                      )}
+                      {q.organization && <><span className="text-[#CBD5E0]">·</span>{q.organization}</>}
                     </p>
                   </div>
                 </div>

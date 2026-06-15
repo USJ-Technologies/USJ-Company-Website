@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Package, SlidersHorizontal, X, Sparkles } from 'lucide-react';
 import ProductCard from '../components/shop/ProductCard';
 import { SkeletonProductCard } from '../components/ui/Skeleton';
@@ -132,10 +133,15 @@ function FilterPanel({ filters, brands, visibleCategories, activeFilterCount, on
 }
 
 export default function ShopPage() {
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [filters, setFilters] = useState(emptyFilters);
+  const [filters, setFilters] = useState(() => ({
+    ...emptyFilters,
+    brand: searchParams.get('brand') || '',
+    category: searchParams.get('category') || '',
+  }));
   const [page, setPage] = useState(1);
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);

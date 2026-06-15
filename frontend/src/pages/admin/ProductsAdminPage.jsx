@@ -618,9 +618,12 @@ const ProductsAdminPage = () => {
   const openAdd = () => { setEditingProduct(null); setShowForm(true); };
 
   const openEdit = async (id) => {
-    const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+    const [{ data, error }, { data: images }] = await Promise.all([
+      supabase.from('products').select('*').eq('id', id).single(),
+      supabase.from('product_images').select('url, is_primary, display_order').eq('product_id', id).order('display_order'),
+    ]);
     if (error) { toast.error('Failed to load product'); return; }
-    setEditingProduct(data);
+    setEditingProduct({ ...data, images: images ?? [] });
     setShowForm(true);
   };
 

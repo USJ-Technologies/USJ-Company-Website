@@ -33,7 +33,12 @@ export default function ContactPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    const id = crypto.randomUUID();
+    const reference_number = `USJ-${Date.now().toString(36).toUpperCase()}`;
     const { error } = await supabase.from('quote_requests').insert({
+      id,
+      reference_number,
+      status: 'new',
       name: form.fullName,
       email: form.email,
       phone: form.phone || null,

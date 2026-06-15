@@ -3,18 +3,20 @@
 -- Sets up RLS for the product-images Storage bucket so that:
 --   • Anyone can read (public product images & cert images)
 --   • Only authenticated users (admin) can upload / update / delete
--- Run in Supabase SQL Editor.
+-- Idempotent: uses DROP IF EXISTS before each CREATE POLICY.
 -- ============================================================
 
--- Enable RLS on storage.objects if not already enabled
--- (Supabase enables this by default on new projects)
+DROP POLICY IF EXISTS "public_read_product_images_storage"   ON storage.objects;
+DROP POLICY IF EXISTS "auth_upload_product_images_storage"   ON storage.objects;
+DROP POLICY IF EXISTS "auth_update_product_images_storage"   ON storage.objects;
+DROP POLICY IF EXISTS "auth_delete_product_images_storage"   ON storage.objects;
 
 -- Public read access to everything in the product-images bucket
 CREATE POLICY "public_read_product_images_storage"
 ON storage.objects FOR SELECT TO public
 USING (bucket_id = 'product-images');
 
--- Authenticated users (admins) can upload new files
+-- Authenticated users can upload new files
 CREATE POLICY "auth_upload_product_images_storage"
 ON storage.objects FOR INSERT TO authenticated
 WITH CHECK (bucket_id = 'product-images');
