@@ -695,10 +695,30 @@ const ProductsAdminPage = () => {
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
     setDeleting(id);
+
+    // Fetch image URLs before deleting (CASCADE removes DB rows but not storage files)
+    const { data: images } = await supabase
+      .from('product_images')
+      .select('url')
+      .eq('product_id', id);
+
     const { error } = await supabase.from('products').delete().eq('id', id);
     setDeleting(null);
-    if (error) toast.error('Delete failed');
-    else { toast.success('Product deleted'); setProducts(p => p.filter(x => x.id !== id)); setTotal(t => t - 1); }
+
+    if (error) {
+      toast.error('Delete failed');
+    } else {
+      // Remove orphan files from storage (non-blocking)
+      const MARKER = '/product-images/';
+      const paths = (images ?? [])
+        .map((img) => { const i = img.url.indexOf(MARKER); return i === -1 ? null : img.url.slice(i + MARKER.length); })
+        .filter(Boolean);
+      if (paths.length) supabase.storage.from('product-images').remove(paths).catch(console.warn);
+
+      toast.success('Product deleted');
+      setProducts((p) => p.filter((x) => x.id !== id));
+      setTotal((t) => t - 1);
+    }
   };
 
   const toggleField = async (id, field, current) => {

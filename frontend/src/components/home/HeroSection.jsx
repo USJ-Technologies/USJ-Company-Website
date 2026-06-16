@@ -6,7 +6,7 @@ const credentials = [
   { icon: ShieldCheck, label: 'GeM Registered', sub: 'Govt. e-Marketplace Seller' },
   { icon: Award, label: 'Startup India', sub: 'DPIIT Recognised' },
   { icon: CheckCircle, label: 'MSME / Udyam', sub: 'Ministry of MSME' },
-  { icon: MapPin, label: 'Dehradun, UA', sub: 'Serving Pan-India' },
+  { icon: MapPin, label: 'Dehradun, UK', sub: 'Serving Pan-India' },
 ];
 
 const clients = ['Government Depts', 'Defence & Paramilitary', 'Police & CRPF', 'ONGC · BHEL', 'District Offices', 'Universities'];

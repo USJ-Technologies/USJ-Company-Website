@@ -27,7 +27,14 @@ export async function getProducts({
     .range((page - 1) * limit, page * limit - 1);
 
   if (search) {
-    query = query.ilike('name', `%${search}%`);
+    // Split into words so "TENDA 8-port" matches products containing both terms
+    const words = search.trim().split(/\s+/).filter(Boolean);
+    words.forEach((word) => {
+      const w = word.replace(/[%_]/g, '\\$&'); // escape LIKE special chars
+      query = query.or(
+        `name.ilike.%${w}%,model.ilike.%${w}%,brand_name.ilike.%${w}%,category_name.ilike.%${w}%`
+      );
+    });
   }
   if (brand) {
     query = query.eq('brand_name', brand);
