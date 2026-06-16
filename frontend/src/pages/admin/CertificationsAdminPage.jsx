@@ -178,8 +178,20 @@ export default function CertificationsAdminPage() {
     setDeleting(cert.id);
     const { error } = await supabase.from('certifications').delete().eq('id', cert.id);
     setDeleting(null);
-    if (error) toast.error('Delete failed: ' + error.message);
-    else { toast.success('Deleted'); load(); }
+    if (error) {
+      toast.error('Delete failed: ' + error.message);
+    } else {
+      // Remove storage file (non-blocking)
+      if (cert.image_url) {
+        const MARKER = '/product-images/';
+        const i = cert.image_url.indexOf(MARKER);
+        if (i !== -1) {
+          supabase.storage.from('product-images').remove([cert.image_url.slice(i + MARKER.length)]).catch(console.warn);
+        }
+      }
+      toast.success('Deleted');
+      load();
+    }
   };
 
   return (
