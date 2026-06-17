@@ -347,14 +347,24 @@ function JobApplications({ jobId, jobTitle }) {
   const [filterStatus, setFilterStatus] = useState('');
 
   useEffect(() => {
-    setLoading(true);
-    let q = supabase.from('job_applications').select('*')
-      .eq('job_id', jobId).order('created_at', { ascending: false });
-    q.then(({ data, error }) => {
-      if (error) toast.error('Failed to load applications');
-      else setApps(data ?? []);
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('job_applications')
+        .select('*')
+        .eq('job_id', jobId)
+        .order('created_at', { ascending: false });
+      if (cancelled) return;
+      if (error) {
+        console.error('[careers] load applications error:', error);
+        toast.error(`Failed to load applications: ${error.message}`);
+      } else {
+        setApps(data ?? []);
+      }
       setLoading(false);
-    });
+    })();
+    return () => { cancelled = true; };
   }, [jobId]);
 
   const updateStatus = async (appId, status) => {
