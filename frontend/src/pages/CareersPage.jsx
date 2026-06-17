@@ -49,22 +49,39 @@ const emptyForm = {
 
 // ── Validation helpers ────────────────────────────────────────
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^[+]?[\d\s\-().]{7,15}$/;
+// Strip all non-digit chars and require exactly 10 digits (Indian mobile)
+const digitsOnly = (s) => s.replace(/\D/g, '');
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
-const ALLOWED_EXTS = ['.pdf', '.doc', '.docx'];
 
 function validateApplyForm(form, resumeFile) {
   const e = {};
-  if (!form.name.trim() || form.name.trim().length < 2) e.name = 'Please enter your full name (at least 2 characters)';
+
+  // Name: required, at least 2 chars
+  if (!form.name.trim() || form.name.trim().length < 2)
+    e.name = 'Please enter your full name (at least 2 characters)';
+
+  // Email: required, valid format
   if (!form.email.trim()) e.email = 'Email address is required';
   else if (!EMAIL_RE.test(form.email.trim())) e.email = 'Please enter a valid email address';
-  if (form.phone.trim() && !PHONE_RE.test(form.phone.trim())) e.phone = 'Invalid phone number format';
-  if (form.linkedin_url.trim() && !form.linkedin_url.trim().startsWith('http')) e.linkedin_url = 'LinkedIn URL must start with http:// or https://';
+
+  // Phone: optional, but if filled must be exactly 10 digits
+  if (form.phone.trim()) {
+    const d = digitsOnly(form.phone.trim());
+    if (d.length !== 10) e.phone = 'Phone number must be exactly 10 digits';
+  }
+
+  // LinkedIn: optional, must start with http if provided
+  if (form.linkedin_url.trim() && !form.linkedin_url.trim().startsWith('http'))
+    e.linkedin_url = 'LinkedIn URL must start with https://';
+
+  // Resume: optional, but if provided must be PDF only, max 5 MB
   if (resumeFile) {
     const ext = '.' + resumeFile.name.split('.').pop().toLowerCase();
-    if (!ALLOWED_EXTS.includes(ext)) e.resume = 'Only PDF, DOC, or DOCX files are accepted';
-    else if (resumeFile.size > MAX_FILE_BYTES) e.resume = `File too large — max 5 MB (your file is ${(resumeFile.size / 1024 / 1024).toFixed(1)} MB)`;
+    if (ext !== '.pdf') e.resume = 'Only PDF files are accepted (DOC/DOCX not supported)';
+    else if (resumeFile.size > MAX_FILE_BYTES)
+      e.resume = `File too large — max 5 MB (yours is ${(resumeFile.size / 1024 / 1024).toFixed(1)} MB)`;
   }
+
   return e;
 }
 
@@ -145,7 +162,7 @@ function JobDrawer({ job, onClose }) {
       job_title: job.title,
       name: form.name.trim(),
       email: form.email.trim().toLowerCase(),
-      phone: form.phone.trim() || null,
+      phone: form.phone.trim() ? digitsOnly(form.phone.trim()) : null,
       linkedin_url: form.linkedin_url.trim() || null,
       resume_url: resumeUrl,
       cover_note: form.cover_note.trim() || null,
@@ -339,7 +356,7 @@ function JobDrawer({ job, onClose }) {
                 <label className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-[6px] cursor-pointer transition-colors ${errors.resume ? 'border-red-400 bg-red-50' : 'border-[#E2E8F0] hover:border-[#C9A84C] hover:bg-[#FFFFF0]'}`}>
                   <input
                     type="file"
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf,application/pdf"
                     className="hidden"
                     onChange={(e) => handleResumeChange(e.target.files?.[0] ?? null)}
                   />
@@ -347,7 +364,7 @@ function JobDrawer({ job, onClose }) {
                     <div className="text-center">
                       <CheckCircle size={20} className="mx-auto text-green-500 mb-1" />
                       <p className="text-sm font-medium text-[#0A1628]">{resumeFile.name}</p>
-                      <p className="text-xs text-[#718096]">{(resumeFile.size / 1024).toFixed(0)} KB</p>
+                      <p className="text-xs text-[#718096]">{(resumeFile.size / 1024).toFixed(0)} KB · PDF</p>
                     </div>
                   ) : (
                     <div className="text-center">
@@ -355,7 +372,7 @@ function JobDrawer({ job, onClose }) {
                       <p className={`text-sm font-medium ${errors.resume ? 'text-red-500' : 'text-[#0A1628]'}`}>
                         {resumeFile ? resumeFile.name : 'Upload Resume'}
                       </p>
-                      <p className="text-xs text-[#718096]">PDF, DOC, DOCX — max 5 MB</p>
+                      <p className="text-xs text-[#718096]">PDF only — max 5 MB</p>
                     </div>
                   )}
                 </label>
