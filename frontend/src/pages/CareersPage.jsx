@@ -47,27 +47,80 @@ const emptyForm = {
   name: '', email: '', phone: '', linkedin_url: '', cover_note: '',
 };
 
+// ── Validation helpers ────────────────────────────────────────
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_RE = /^[+]?[\d\s\-().]{7,15}$/;
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
+const ALLOWED_EXTS = ['.pdf', '.doc', '.docx'];
+
+function validateApplyForm(form, resumeFile) {
+  const e = {};
+  if (!form.name.trim() || form.name.trim().length < 2) e.name = 'Please enter your full name (at least 2 characters)';
+  if (!form.email.trim()) e.email = 'Email address is required';
+  else if (!EMAIL_RE.test(form.email.trim())) e.email = 'Please enter a valid email address';
+  if (form.phone.trim() && !PHONE_RE.test(form.phone.trim())) e.phone = 'Invalid phone number format';
+  if (form.linkedin_url.trim() && !form.linkedin_url.trim().startsWith('http')) e.linkedin_url = 'LinkedIn URL must start with http:// or https://';
+  if (resumeFile) {
+    const ext = '.' + resumeFile.name.split('.').pop().toLowerCase();
+    if (!ALLOWED_EXTS.includes(ext)) e.resume = 'Only PDF, DOC, or DOCX files are accepted';
+    else if (resumeFile.size > MAX_FILE_BYTES) e.resume = `File too large — max 5 MB (your file is ${(resumeFile.size / 1024 / 1024).toFixed(1)} MB)`;
+  }
+  return e;
+}
+
 // ── Job Detail + Apply Drawer ────────────────────────────────
 function JobDrawer({ job, onClose }) {
   const [stage, setStage] = useState('detail'); // 'detail' | 'apply' | 'success'
   const [form, setForm] = useState(emptyForm);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [resumeFile, setResumeFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const typeStyle = TYPE_COLOR[job.type] ?? { bg: '#EBF4FF', text: '#1A3A5C' };
 
+  const setField = (key, value) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    // Re-validate on change if field already touched
+    setTouched((t) => ({ ...t, [key]: true }));
+    setErrors((prev) => {
+      const updated = validateApplyForm({ ...form, [key]: value }, resumeFile);
+      return { ...prev, [key]: updated[key] };
+    });
+  };
+
+  const handleBlur = (key) => {
+    setTouched((t) => ({ ...t, [key]: true }));
+    setErrors((prev) => ({ ...prev, ...validateApplyForm(form, resumeFile) }));
+  };
+
+  const handleResumeChange = (file) => {
+    setResumeFile(file);
+    if (file) {
+      const ext = '.' + file.name.split('.').pop().toLowerCase();
+      let err;
+      if (!ALLOWED_EXTS.includes(ext)) err = 'Only PDF, DOC, or DOCX files are accepted';
+      else if (file.size > MAX_FILE_BYTES) err = `File too large — max 5 MB (your file is ${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+      setErrors((e) => ({ ...e, resume: err }));
+    } else {
+      setErrors((e) => ({ ...e, resume: undefined }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.email.trim()) {
-      toast.error('Name and email are required');
+    const errs = validateApplyForm(form, resumeFile);
+    setErrors(errs);
+    setTouched({ name: true, email: true, phone: true, linkedin_url: true, resume: true });
+    if (Object.keys(errs).length > 0) {
+      toast.error('Please fix the errors below before submitting');
       return;
     }
 
     setSubmitting(true);
     let resumeUrl = null;
 
-    // Upload resume if provided
     if (resumeFile) {
       const ext = resumeFile.name.split('.').pop();
       const path = `${job.id}/${crypto.randomUUID()}.${ext}`;
@@ -109,7 +162,10 @@ function JobDrawer({ job, onClose }) {
     }
   };
 
-  const inputCls = 'w-full px-3 py-2.5 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C] bg-white';
+  const inputCls = (key) => `w-full px-3 py-2.5 text-sm border rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C] bg-white ${errors[key] && touched[key] ? 'border-red-400 bg-red-50' : 'border-[#E2E8F0]'}`;
+  const errMsg = (key) => errors[key] && touched[key] && (
+    <p className="text-xs text-red-500 mt-1">{errors[key]}</p>
+  );
   const labelCls = 'block text-xs font-semibold text-[#0A1628] mb-1';
 
   return (
@@ -235,51 +291,59 @@ function JobDrawer({ job, onClose }) {
 
           {/* ── Apply Form ── */}
           {stage === 'apply' && (
-            <form onSubmit={handleSubmit} className="space-y-4 pb-4">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4 pb-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 sm:col-span-1">
                   <label className={labelCls}>Full Name *</label>
-                  <input type="text" required value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  <input type="text" value={form.name}
+                    onChange={(e) => setField('name', e.target.value)}
+                    onBlur={() => handleBlur('name')}
                     placeholder="Your full name"
-                    className={inputCls} />
+                    className={inputCls('name')} />
+                  {errMsg('name')}
                 </div>
                 <div className="col-span-2 sm:col-span-1">
                   <label className={labelCls}>Email Address *</label>
-                  <input type="email" required value={form.email}
-                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                  <input type="email" value={form.email}
+                    onChange={(e) => setField('email', e.target.value)}
+                    onBlur={() => handleBlur('email')}
                     placeholder="you@example.com"
-                    className={inputCls} />
+                    className={inputCls('email')} />
+                  {errMsg('email')}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Phone Number</label>
                   <input type="tel" value={form.phone}
-                    onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                    onChange={(e) => setField('phone', e.target.value)}
+                    onBlur={() => handleBlur('phone')}
                     placeholder="+91 XXXXX XXXXX"
-                    className={inputCls} />
+                    className={inputCls('phone')} />
+                  {errMsg('phone')}
                 </div>
                 <div>
                   <label className={labelCls}>LinkedIn Profile</label>
-                  <input type="url" value={form.linkedin_url}
-                    onChange={(e) => setForm((f) => ({ ...f, linkedin_url: e.target.value }))}
+                  <input type="text" value={form.linkedin_url}
+                    onChange={(e) => setField('linkedin_url', e.target.value)}
+                    onBlur={() => handleBlur('linkedin_url')}
                     placeholder="https://linkedin.com/in/..."
-                    className={inputCls} />
+                    className={inputCls('linkedin_url')} />
+                  {errMsg('linkedin_url')}
                 </div>
               </div>
 
               {/* Resume upload */}
               <div>
                 <label className={labelCls}>Resume / CV</label>
-                <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-[#E2E8F0] rounded-[6px] cursor-pointer hover:border-[#C9A84C] hover:bg-[#FFFFF0] transition-colors">
+                <label className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-[6px] cursor-pointer transition-colors ${errors.resume ? 'border-red-400 bg-red-50' : 'border-[#E2E8F0] hover:border-[#C9A84C] hover:bg-[#FFFFF0]'}`}>
                   <input
                     type="file"
                     accept=".pdf,.doc,.docx"
                     className="hidden"
-                    onChange={(e) => setResumeFile(e.target.files?.[0] ?? null)}
+                    onChange={(e) => handleResumeChange(e.target.files?.[0] ?? null)}
                   />
-                  {resumeFile ? (
+                  {resumeFile && !errors.resume ? (
                     <div className="text-center">
                       <CheckCircle size={20} className="mx-auto text-green-500 mb-1" />
                       <p className="text-sm font-medium text-[#0A1628]">{resumeFile.name}</p>
@@ -287,12 +351,17 @@ function JobDrawer({ job, onClose }) {
                     </div>
                   ) : (
                     <div className="text-center">
-                      <Upload size={20} className="mx-auto text-[#718096] mb-1" />
-                      <p className="text-sm font-medium text-[#0A1628]">Upload Resume</p>
+                      <Upload size={20} className={`mx-auto mb-1 ${errors.resume ? 'text-red-400' : 'text-[#718096]'}`} />
+                      <p className={`text-sm font-medium ${errors.resume ? 'text-red-500' : 'text-[#0A1628]'}`}>
+                        {resumeFile ? resumeFile.name : 'Upload Resume'}
+                      </p>
                       <p className="text-xs text-[#718096]">PDF, DOC, DOCX — max 5 MB</p>
                     </div>
                   )}
                 </label>
+                {errors.resume && (
+                  <p className="text-xs text-red-500 mt-1">{errors.resume}</p>
+                )}
               </div>
 
               {/* Cover note */}
@@ -301,9 +370,9 @@ function JobDrawer({ job, onClose }) {
                 <textarea
                   rows={5}
                   value={form.cover_note}
-                  onChange={(e) => setForm((f) => ({ ...f, cover_note: e.target.value }))}
+                  onChange={(e) => setField('cover_note', e.target.value)}
                   placeholder="Tell us why you'd be a great fit for this role..."
-                  className={`${inputCls} resize-none`}
+                  className={`${inputCls('cover_note')} resize-none`}
                 />
               </div>
 
