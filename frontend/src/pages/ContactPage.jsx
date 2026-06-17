@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MapPin, Mail, Phone, Linkedin, Twitter, Instagram, Clock, CheckCircle, Send } from 'lucide-react';
+import SEOHead from '../components/seo/SEOHead';
 import SectionHeader from '../components/ui/SectionHeader';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -55,7 +56,22 @@ export default function ContactPage() {
   };
 
   return (
-    <div>
+    <>
+      <SEOHead
+        title="Contact Us – Get a Quote or Partner With Us"
+        description="Contact USJ Technologies in Dehradun for product quotes, GeM orders, tender inquiries, partnership proposals, or IT consultations. Call +91-7500502563 or email techteam@usjtechnologies.com."
+        keywords="contact IT company Dehradun, get quote electronics Uttarakhand, tender inquiry Dehradun, GeM order contact, partner with USJ Technologies, business inquiry Uttarakhand, IT consultation Dehradun, quote request networking products"
+        canonical="/contact"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'ContactPage',
+          'url': 'https://usjtechnologies.com/contact',
+          'name': 'Contact USJ Technologies',
+          'description': 'Contact USJ Technologies for quotes, GeM orders, tenders, and partnerships.',
+          'mainEntity': { '@id': 'https://usjtechnologies.com/#organization' },
+        }}
+      />
+      <div>
       {/* Hero */}
       <section className="section-py hero-pattern">
         <div className="container-max">
@@ -242,5 +258,6 @@ export default function ContactPage() {
         </div>
       </section>
     </div>
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Scale, Compass, Mountain, Lock, ExternalLink, Clock, ArrowRight } from 'lucide-react';
+import SEOHead from '../components/seo/SEOHead';
 import SectionHeader from '../components/ui/SectionHeader';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -12,7 +13,14 @@ export default function VenturesPage() {
   const { ventures } = APP_CONFIG;
 
   return (
-    <div>
+    <>
+      <SEOHead
+        title="Our Ventures & Partner Companies"
+        description="USJ Technologies group ventures include Bail & Beyond Law Chambers, Chalo Kumbh, and Doon Travelers – businesses based in Uttarakhand offering legal, travel, and pilgrimage services."
+        keywords="USJ Technologies ventures, Bail and Beyond law Uttarakhand, Chalo Kumbh Dehradun, Doon Travelers Uttarakhand, technology group companies Dehradun, business ventures Uttarakhand"
+        canonical="/ventures"
+      />
+      <div>
       {/* Hero */}
       <section className="section-py" style={{ backgroundColor: '#0A1628' }}>
         <div className="container-max">
@@ -158,5 +166,6 @@ export default function VenturesPage() {
         </div>
       </section>
     </div>
+    </>
   );
 }

@@ -40,6 +40,7 @@ import VenturesAdminPage from './pages/admin/VenturesAdminPage';
 import CertificationsAdminPage from './pages/admin/CertificationsAdminPage';
 import TeamAdminPage from './pages/admin/TeamAdminPage';
 import AccessControlAdminPage from './pages/admin/AccessControlAdminPage';
+import CareersAdminPage from './pages/admin/CareersAdminPage';
 
 const App = () => {
   const { init, isAuthenticated } = useAuthStore();
@@ -97,6 +98,7 @@ const App = () => {
         <Route path="certifications" element={<CertificationsAdminPage />} />
         <Route path="team" element={<TeamAdminPage />} />
         <Route path="access-control" element={<AccessControlAdminPage />} />
+        <Route path="careers" element={<CareersAdminPage />} />
       </Route>
     </Routes>
   );

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Package, SlidersHorizontal, X, Sparkles } from 'lucide-react';
+import SEOHead from '../components/seo/SEOHead';
 import ProductCard from '../components/shop/ProductCard';
 import { SkeletonProductCard } from '../components/ui/Skeleton';
 import Button from '../components/ui/Button';
@@ -198,6 +199,24 @@ export default function ShopPage() {
 
   return (
     <div>
+      <SEOHead
+        title="Shop – Networking, Electronics & IT Products"
+        description="Buy ENTER switches, TENDA routers, ZOOOK speakers and 700+ electronics products from USJ Technologies – GeM registered B2B supplier in Dehradun. Bulk pricing, pan-India delivery, government procurement supported."
+        keywords="buy networking products Dehradun, ENTER switch price India, TENDA router Uttarakhand, ZOOOK speaker buy, electronics wholesale Dehradun, B2B IT hardware supplier, network switch supplier Uttarakhand, PoE switch Dehradun, WiFi router bulk buy India, managed switch GeM, government electronics purchase, bulk IT equipment Uttarakhand"
+        canonical="/shop"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          'name': 'IT & Electronics Products – USJ Technologies',
+          'description': 'ENTER, TENDA, and ZOOOK brand networking and electronics products available for B2B purchase.',
+          'url': 'https://usjtechnologies.com/shop',
+          'itemListElement': [
+            { '@type': 'ListItem', 'position': 1, 'name': 'ENTER Networking Products' },
+            { '@type': 'ListItem', 'position': 2, 'name': 'TENDA WiFi & Networking' },
+            { '@type': 'ListItem', 'position': 3, 'name': 'ZOOOK Audio & Accessories' },
+          ],
+        }}
+      />
       {/* Page header */}
       <section className="py-8 bg-white border-b border-[#E2E8F0]">
         <div className="container-max">
