@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Target, Eye, Zap, Shield, Star, Linkedin } from 'lucide-react';
+import SEOHead from '../components/seo/SEOHead';
 import SectionHeader from '../components/ui/SectionHeader';
 import Card from '../components/ui/Card';
 import { APP_CONFIG, ROUTES } from '../config/app';
@@ -50,7 +51,22 @@ export default function AboutPage() {
   }, []);
 
   return (
-    <div>
+    <>
+      <SEOHead
+        title="About Us"
+        description="USJ Technologies (OPC) Pvt Ltd – founded by Ujjwal Singh Jeena in Dehradun. Leading IT company in Uttarakhand, GeM registered, Startup India certified. Government & defence electronics supplier, networking solutions, and B2B technology services across North India."
+        keywords="USJ Technologies about, Ujjwal Singh Jeena, IT company founder Dehradun, technology startup Uttarakhand, GeM seller about, government electronics company Uttarakhand, Startup India Dehradun, defence technology company North India"
+        canonical="/about"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'AboutPage',
+          'url': 'https://usjtechnologies.com/about',
+          'name': 'About USJ Technologies – IT Company Dehradun',
+          'description': 'USJ Technologies is a Dehradun-based IT company founded by Ujjwal Singh Jeena. GeM registered, Startup India certified electronics supplier serving government, defence, and commercial clients across India.',
+          'mainEntity': { '@id': 'https://usjtechnologies.com/#organization' },
+        }}
+      />
+      <div>
       {/* Hero */}
       <section className="section-py hero-pattern">
         <div className="container-max">
@@ -242,5 +258,6 @@ export default function AboutPage() {
         </div>
       </section>
     </div>
+    </>
   );
 }

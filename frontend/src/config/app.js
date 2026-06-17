@@ -89,4 +89,5 @@ export const ROUTES = {
   ADMIN_CERTIFICATIONS: '/admin/certifications',
   ADMIN_TEAM: '/admin/team',
   ADMIN_ACCESS_CONTROL: '/admin/access-control',
+  ADMIN_CAREERS: '/admin/careers',
 };

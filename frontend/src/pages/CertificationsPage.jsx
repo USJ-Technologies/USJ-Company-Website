@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Lock } from 'lucide-react';
+import SEOHead from '../components/seo/SEOHead';
 import SectionHeader from '../components/ui/SectionHeader';
 import CertCard from '../components/certifications/CertCard';
 import { SkeletonCard } from '../components/ui/Skeleton';
@@ -52,11 +53,19 @@ export default function CertificationsPage() {
     getCertifications().then(({ data }) => {
       setCerts(data?.length ? data : staticCerts);
       setIsLoading(false);
+
     });
   }, []);
 
   return (
-    <div>
+    <>
+      <SEOHead
+        title="Certifications & Accreditations"
+        description="USJ Technologies holds GeM registration, Startup India certification, and multiple government accreditations. Trusted, compliant IT company in Dehradun, Uttarakhand for government and defence electronics procurement."
+        keywords="GeM registration Uttarakhand, Startup India certified Dehradun, government accreditation IT company, MSME certified Uttarakhand, certifications USJ Technologies, compliant electronics supplier India, defence supplier certification"
+        canonical="/certifications"
+      />
+      <div>
       {/* Hero */}
       <section className="section-py" style={{ backgroundColor: '#0A1628' }}>
         <div className="container-max">
@@ -113,5 +122,6 @@ export default function CertificationsPage() {
         </div>
       </section>
     </div>
+    </>
   );
 }

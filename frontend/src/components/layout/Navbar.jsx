@@ -15,6 +15,7 @@ const navLinks = [
   { label: 'Ventures', to: ROUTES.VENTURES },
   { label: 'Shop', to: ROUTES.SHOP },
   { label: 'Certifications', to: ROUTES.CERTIFICATIONS },
+  { label: 'Careers', to: ROUTES.CAREERS },
   { label: 'Contact', to: ROUTES.CONTACT },
 ];
 

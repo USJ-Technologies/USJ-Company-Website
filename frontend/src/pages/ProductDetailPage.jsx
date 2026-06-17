@@ -10,6 +10,9 @@ import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
 import Skeleton from '../components/ui/Skeleton';
 import { APP_CONFIG, ROUTES } from '../config/app';
+import SEOHead from '../components/seo/SEOHead';
+
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://usjtechnologies.com';
 
 const BRAND_COLOR = { ENTER: '#1A56DB', TENDA: '#2D7D46', ZOOOK: '#C9A84C' };
 
@@ -102,7 +105,63 @@ export default function ProductDetailPage() {
   const hasRichData = hasSpecs || hasKeyFeatures || hasInBox || product.description;
   const brandColor = BRAND_COLOR[product.brand_name] || '#0A1628';
 
+  const productDescription = product.description
+    || `Buy ${product.name}${product.model ? ` (${product.model})` : ''} from USJ Technologies – GeM registered ${product.brand_name || ''} electronics supplier in Dehradun. B2B pricing, pan-India delivery, government procurement supported.`;
+
+  const productStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    'name': product.name,
+    'description': productDescription,
+    'image': allImages.length ? allImages : undefined,
+    'sku': product.model || undefined,
+    'mpn': product.model || undefined,
+    'brand': product.brand_name ? { '@type': 'Brand', 'name': product.brand_name } : undefined,
+    'category': product.category_name || undefined,
+    'offers': {
+      '@type': 'Offer',
+      'url': `${SITE_URL}/product/${product.slug}`,
+      'priceCurrency': 'INR',
+      ...(product.unit_price ? { 'price': product.unit_price, 'priceValidUntil': '2026-12-31' } : {}),
+      'availability': 'https://schema.org/InStock',
+      'itemCondition': 'https://schema.org/NewCondition',
+      'seller': { '@id': `${SITE_URL}/#organization` },
+      'areaServed': { '@type': 'Country', 'name': 'India' },
+    },
+    ...(hasSpecs ? { 'additionalProperty': Object.entries(product.specifications).map(([k, v]) => ({ '@type': 'PropertyValue', 'name': k, 'value': v })) } : {}),
+    'breadcrumb': {
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': `${SITE_URL}/` },
+        { '@type': 'ListItem', 'position': 2, 'name': 'Shop', 'item': `${SITE_URL}/shop` },
+        ...(product.brand_name ? [{ '@type': 'ListItem', 'position': 3, 'name': product.brand_name, 'item': `${SITE_URL}/shop?brand=${product.brand_name}` }] : []),
+        { '@type': 'ListItem', 'position': product.brand_name ? 4 : 3, 'name': product.name, 'item': `${SITE_URL}/product/${product.slug}` },
+      ],
+    },
+  };
+
   return (
+    <>
+      <SEOHead
+        title={`${product.name}${product.model ? ` – ${product.model}` : ''}`}
+        description={productDescription}
+        keywords={[
+          product.name,
+          product.model,
+          product.brand_name,
+          product.category_name,
+          `${product.brand_name} ${product.category_name} Dehradun`,
+          `buy ${product.name} India`,
+          `${product.name} price India`,
+          `${product.brand_name} products supplier Uttarakhand`,
+          'GeM electronics supplier',
+          'B2B IT hardware India',
+        ].filter(Boolean).join(', ')}
+        canonical={`/product/${product.slug}`}
+        ogImage={allImages[0] || undefined}
+        ogType="product"
+        structuredData={productStructuredData}
+      />
     <div className="bg-[#F8F9FA] min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
 
@@ -362,6 +421,7 @@ export default function ProductDetailPage() {
 
       </div>
     </div>
+    </>
   );
 }
 

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Shield, Cpu, FileText, CheckCircle, ArrowRight, ClipboardList, Settings, Truck, HeadphonesIcon } from 'lucide-react';
+import SEOHead from '../components/seo/SEOHead';
 import SectionHeader from '../components/ui/SectionHeader';
 import Card from '../components/ui/Card';
 import { ROUTES } from '../config/app';
@@ -76,7 +77,28 @@ const processSteps = [
 
 export default function ServicesPage() {
   return (
-    <div>
+    <>
+      <SEOHead
+        title="IT Services & Government Solutions"
+        description="USJ Technologies offers Government & Defence IT solutions, GeM procurement services, network deployment, CCTV & surveillance systems, tender support, and IT consulting in Dehradun, Uttarakhand, and across India."
+        keywords="IT services Dehradun, government IT solutions Uttarakhand, GeM procurement services, defence electronics services, network installation Dehradun, CCTV installation Uttarakhand, tender IT support, surveillance systems Dehradun, IT consulting North India, technology services Uttarakhand, security systems installation, IT infrastructure deployment"
+        canonical="/services"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'Service',
+          'name': 'Government & Defence IT Solutions',
+          'provider': { '@id': 'https://usjtechnologies.com/#organization' },
+          'description': 'GeM procurement, network infrastructure, CCTV & security systems, defence electronics supply, and government IT services across Uttarakhand and India.',
+          'areaServed': [
+            { '@type': 'City', 'name': 'Dehradun' },
+            { '@type': 'State', 'name': 'Uttarakhand' },
+            { '@type': 'Country', 'name': 'India' },
+          ],
+          'serviceType': ['Government IT Procurement', 'GeM Services', 'Network Deployment', 'Surveillance Systems', 'Defence Electronics Supply'],
+          'url': 'https://usjtechnologies.com/services',
+        }}
+      />
+      <div>
       {/* Hero */}
       <section className="section-py hero-pattern">
         <div className="container-max max-w-2xl">
@@ -168,5 +190,6 @@ export default function ServicesPage() {
         </div>
       </section>
     </div>
+    </>
   );
 }
