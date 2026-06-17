@@ -4,6 +4,102 @@ All completed development work across sessions. Most recent changes at top.
 
 ---
 
+## Session 6 — 2026-06-17
+
+### Features Added / Fixed
+
+#### 13. Careers Platform — Full Build
+**Files:**
+- `supabase/migrations/20240617000013_careers.sql` — job_postings + job_applications tables, RLS, resumes storage bucket
+- `supabase/migrations/20240617000014_fix_applications_access.sql` — explicit GRANTs + split FOR ALL into per-operation policies (SELECT/UPDATE/DELETE)
+- `frontend/src/pages/CareersPage.jsx` — public careers page (load from DB, job drawer, apply form)
+- `frontend/src/pages/admin/CareersAdminPage.jsx` — admin careers page
+- `frontend/src/components/layout/AdminLayout.jsx` — Careers in sidebar
+- `frontend/src/components/layout/Navbar.jsx` — Careers in main nav
+- `frontend/src/config/app.js` — ADMIN_CAREERS route
+- `frontend/src/App.jsx` — /admin/careers route
+
+**Admin page features:**
+- Job list with applications nested inline per job (not a separate flat tab)
+- Applications toggle button per job — shows count, opens inline table
+- Shortened job ID visible on card (last 8 chars) + copy full UUID button
+- Toggle active/featured/edit/delete per job
+- Delete job: fetches all resume URLs → removes files from resumes bucket → deletes job row (CASCADE handles applications rows)
+- Confirm dialog shows exact application count before delete
+- Per-application status dropdown, Details panel (contact, resume link, cover note, internal notes, status pipeline)
+
+**Public page features:**
+- Loads only `is_active = true` jobs, ordered by featured then created_at
+- Department filter pills + type dropdown
+- Slide-over drawer: Job Details tab + Apply Now tab
+- Application success screen after submit
+- Speculative application mailto link
+
+**Apply form validation (strict):**
+- Name: required, min 2 chars
+- Email: required, valid email regex
+- Phone: optional; if provided, must be exactly 10 digits (digits only, formatting stripped before save)
+- LinkedIn: optional; if provided must start with https://
+- Resume: optional; PDF only (accept=".pdf"), max 5 MB
+- All errors shown inline below fields, validated on blur + on change (after first touch), submit blocked until clean
+
+**RLS design:**
+- `public_read_active_jobs` — anyone reads active jobs (no auth)
+- `team_manage_jobs` — admin/manager full CRUD on job_postings
+- `public_submit_application` — anyone can INSERT (anon public apply)
+- `team_select_applications` — admin/manager SELECT (explicit, not FOR ALL)
+- `team_update_applications` — admin/manager UPDATE
+- `team_delete_applications` — admin/manager DELETE
+- Storage: anyone upload/read resumes; only team can delete
+
+#### 14. Bug Fix — Admin Cannot Read Applications
+**Root cause (2 issues combined):**
+1. Missing `GRANT SELECT ON job_applications TO authenticated` — Supabase auto-grants only apply at project init for tables that exist then; new tables in later migrations need explicit grants
+2. `FOR ALL` policy combined with a separate `FOR INSERT` policy creates ambiguity in PostgreSQL RLS resolution; the USING clause of FOR ALL was not being evaluated for SELECT in all scenarios
+
+**Fix:** Migration 014 adds explicit `GRANT SELECT, INSERT, UPDATE, DELETE ON job_applications TO authenticated` and `GRANT INSERT ON job_applications TO anon`, then drops `team_manage_applications` (FOR ALL) and replaces with three explicit policies (team_select_applications, team_update_applications, team_delete_applications).
+
+#### 15. SEO Implementation
+**Files:** `frontend/index.html`, `frontend/src/main.jsx`, `frontend/src/components/seo/SEOHead.jsx`, `frontend/.env`, multiple page files, `frontend/public/robots.txt`, `frontend/public/sitemap.xml`
+- `react-helmet-async` for per-page dynamic meta
+- JSON-LD: Organization, LocalBusiness, WebSite (with SearchAction), Product, Service, ContactPage, AboutPage, BreadcrumbList
+- Geo meta tags targeting Dehradun / Uttarakhand
+- robots.txt blocks /admin/, /profile, /orders, /cart, /checkout, /wishlist, /login, /register
+- sitemap.xml covers all static pages + brand-filtered shop URLs
+
+#### 16. Storage Delete Cleanup
+**Files:** `frontend/src/pages/admin/ProductsAdminPage.jsx`, `frontend/src/pages/admin/CertificationsAdminPage.jsx`
+- On product delete: fetches image URLs from product_images, extracts path after `/product-images/`, removes from bucket (non-blocking)
+- On certification delete: same pattern for the single image_url
+- Uses URL marker pattern: `url.indexOf('/product-images/')` → `url.slice(i + MARKER.length)`
+
+---
+
+## Testing Checklist (run before each deploy)
+
+### Careers Platform
+- [ ] Submit an application via public `/careers` page — verify it appears in admin
+- [ ] Phone: try 9 digits → error; 10 digits → pass; letters → error
+- [ ] Resume: upload .doc → rejected; upload .jpg → rejected; upload PDF >5MB → rejected; valid PDF → accepted
+- [ ] Status update in admin → refresh → confirm persists
+- [ ] Admin notes save → refresh → confirm persists
+- [ ] Delete job with applications → resume file removed from Storage bucket
+- [ ] Toggle active → job disappears from public careers page
+- [ ] Toggle featured → job moves to top on public page
+
+### Core Site
+- [ ] Quote flow: cart → submit → email received at admin address
+- [ ] Product search: "router", "switch", "TENDA" return correct results
+- [ ] Product delete: image gone from Storage bucket
+- [ ] Certification delete: image gone from Storage bucket
+- [ ] Mobile: navbar, shop, product detail, careers on 375px viewport
+- [ ] RBAC: staff role cannot see Products/Certifications/Careers in admin sidebar
+- [ ] robots.txt accessible at /robots.txt
+- [ ] sitemap.xml accessible at /sitemap.xml
+- [ ] 404: navigate to unknown URL — handles gracefully
+
+---
+
 ## Session 4 — 2026-06-15
 
 ### Features Added
@@ -163,12 +259,19 @@ Category-specific descriptions and key_features for all 16 Tenda product categor
 
 ---
 
-## Pending Actions (must be done in Supabase SQL Editor)
+## Migration Status
 
-| Migration | Action |
+| Migration | Status |
 |-----------|--------|
-| Migration 009 | Run `20240614000009_tenda_key_features_fix.sql` |
-| Migration 010 | Run `20240614000010_product_pricing.sql` |
-| Migration 011 | Run `20240615000011_storage_policies.sql` |
-| Migration 012 | Run `20240615000012_rbac.sql` — **required for RBAC to work** |
-| admin_setup.sql | Ensure admin role is set for all team emails |
+| 001–009 | ✅ Applied |
+| 010 product_pricing | ✅ Applied |
+| 011 storage_policies | ✅ Applied |
+| 012 rbac | ✅ Applied |
+| 013 careers | ✅ Applied (supabase db push) |
+| 014 fix_applications_access | ✅ Applied (supabase db push) |
+
+## Pending Actions
+
+- Ensure `profiles.role = 'admin'` is set for all admin team emails (use Access Control admin page or Supabase Studio)
+- Verify `RESEND_API_KEY`, `ADMIN_EMAIL`, `FROM_EMAIL` are set as Supabase Edge Function secrets
+- Set `VITE_SITE_URL=https://usjtechnologies.com` in Vercel environment variables
