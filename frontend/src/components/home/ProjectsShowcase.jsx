@@ -18,6 +18,7 @@ const staticProjects = [
     description: 'Supply and installation of HD surveillance cameras and NVR systems across 12 locations.',
     tags: ['Surveillance', 'Security', 'GeM'],
     color: '#EBF4FF',
+    image: '/Generated/projects-page/installation-cctv.png',
   },
   {
     _id: 'p2',
@@ -27,6 +28,7 @@ const staticProjects = [
     description: 'End-to-end structured cabling and networking setup for a secure research facility.',
     tags: ['Networking', 'Defence', 'Infrastructure'],
     color: '#FFF3CD',
+    image: '/Generated/projects-page/network-nifra.png',
   },
   {
     _id: 'p3',
@@ -36,6 +38,7 @@ const staticProjects = [
     description: 'Procurement of 50+ computers, printers, and peripherals via GeM marketplace for government offices.',
     tags: ['GeM', 'IT Equipment', 'Govt'],
     color: '#D4EDDA',
+    image: '/Generated/projects-page/delivery-dispatch.png',
   },
 ];
 
@@ -83,11 +86,11 @@ export default function ProjectsShowcase() {
               const clientType = project.clientType ?? project.category?.toLowerCase() ?? 'govt';
               return (
               <Card key={project.id ?? project._id} className="overflow-hidden" hover>
-                {/* Color header */}
-                <div
-                  className="h-3"
-                  style={{ backgroundColor: project.color || '#EBF4FF' }}
-                />
+                {project.image ? (
+                  <img src={project.image} alt={project.name} className="w-full h-36 object-cover" />
+                ) : (
+                  <div className="h-3" style={{ backgroundColor: project.color || '#EBF4FF' }} />
+                )}
                 <div className="p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <Badge type={badgeTypeMap[clientType] || 'govt'}>

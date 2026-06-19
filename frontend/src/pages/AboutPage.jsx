@@ -15,9 +15,9 @@ const values = [
 ];
 
 const team = [
-  { name: 'Ujjwal Singh Jeena', role: 'Founder & CEO', initials: 'USJ', bio: 'Visionary entrepreneur with expertise in government procurement, technology integration, and startup building.' },
-  { name: 'Technology Lead', role: 'CTO & Head of Products', initials: 'TL', bio: 'Engineering excellence with deep expertise in electronics, networking systems, and defence-grade technologies.' },
-  { name: 'Operations Lead', role: 'Head of Operations & GeM', initials: 'OL', bio: 'Specialist in government e-marketplace, tender management, and compliance frameworks across India.' },
+  { name: 'Ujjwal Singh Jeena', role: 'Founder & CEO', initials: 'USJ', bio: 'Visionary entrepreneur with expertise in government procurement, technology integration, and startup building.', image_url: '/Generated/about/team-headshot.png' },
+  { name: 'Technology Lead', role: 'CTO & Head of Products', initials: 'TL', bio: 'Engineering excellence with deep expertise in electronics, networking systems, and defence-grade technologies.', image_url: '/Generated/about/team-headshot.png' },
+  { name: 'Operations Lead', role: 'Head of Operations & GeM', initials: 'OL', bio: 'Specialist in government e-marketplace, tender management, and compliance frameworks across India.', image_url: '/Generated/about/team-headshot.png' },
 ];
 
 const milestones = [
@@ -105,6 +105,12 @@ export default function AboutPage() {
                 label="OUR STORY"
                 title="From Dehradun to Serving India"
                 subtitle=""
+              />
+              <img
+                src="/Generated/about/story-office-cul.png"
+                alt="USJ Technologies team working in the office"
+                className="w-full h-56 object-cover rounded-2xl mb-6"
+                style={{ boxShadow: '0 16px 40px rgba(10,22,40,0.15)' }}
               />
               <div className="space-y-4 text-[#4A5568] text-sm leading-relaxed">
                 <p>

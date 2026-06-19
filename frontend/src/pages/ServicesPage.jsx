@@ -12,6 +12,7 @@ const services = [
     title: 'Government & Defence Solutions',
     color: '#EBF4FF',
     iconBg: '#0A1628',
+    image: '/Generated/services-page/govt-def-corridor.png',
     features: [
       'GeM-registered procurement services',
       'Defence electronics supply chain',
@@ -32,6 +33,7 @@ const services = [
     title: 'Technology Products & Electronics',
     color: '#E8D5F5',
     iconBg: '#4A235A',
+    image: '/Generated/services-page/IT-infra-net.png',
     features: [
       'HD surveillance cameras & NVR systems',
       'Structured cabling & networking',
@@ -52,6 +54,7 @@ const services = [
     title: 'GeM Tender Management',
     color: '#D4EDDA',
     iconBg: '#155724',
+    image: '/Generated/services-page/tender-bt2.png',
     features: [
       'GeM seller registration assistance',
       'Tender identification & bid preparation',
@@ -145,6 +148,12 @@ export default function ServicesPage() {
                 </div>
 
                 <div className={!isEven ? 'lg:col-start-1 lg:row-start-1' : ''}>
+                  <img
+                    src={svc.image}
+                    alt={svc.title}
+                    className="w-full h-48 object-cover rounded-xl mb-4"
+                    style={{ boxShadow: '0 12px 32px rgba(10,22,40,0.15)' }}
+                  />
                   <Card className="p-6" hover={false} style={{ borderLeftColor: svc.iconBg, borderLeftWidth: 3 }}>
                     <h3 className="font-bold text-[#0A1628] text-sm mb-4 uppercase tracking-wide">Key Features</h3>
                     <ul className="space-y-2.5">

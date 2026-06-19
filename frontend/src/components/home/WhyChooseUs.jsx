@@ -43,11 +43,19 @@ export default function WhyChooseUs() {
         </div>
 
         {/* Headline */}
-        <div className="max-w-2xl mb-10">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#C9A84C] mb-3">Why Choose Us</p>
-          <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
-            Technology with Trust,<br className="hidden sm:block" /> Compliance & Reliability
-          </h2>
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-10">
+          <div className="max-w-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#C9A84C] mb-3">Why Choose Us</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
+              Technology with Trust,<br className="hidden sm:block" /> Compliance & Reliability
+            </h2>
+          </div>
+          <img
+            src="/Generated/home-page/why-choose-us.png"
+            alt="Carefully packing a networking product for delivery"
+            className="hidden md:block w-64 h-40 rounded-2xl object-cover flex-shrink-0"
+            style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.4)' }}
+          />
         </div>
 
         {/* Trust signals grid */}

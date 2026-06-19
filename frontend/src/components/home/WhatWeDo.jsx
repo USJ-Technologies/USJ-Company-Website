@@ -10,6 +10,7 @@ const services = [
       'End-to-end technology supply for government departments, defence establishments, and paramilitary forces — GeM registered, security-compliant, and trusted across Uttarakhand and beyond.',
     link: ROUTES.SERVICES,
     tag: 'GeM · B2B',
+    image: '/Generated/home-page/what-we-do-b.png',
   },
   {
     number: '02',
@@ -18,6 +19,7 @@ const services = [
       'Surveillance systems, networking gear, power solutions, and IT peripherals from leading brands — sourced from authorised distributors with GST invoice and full after-sales support.',
     link: ROUTES.SHOP,
     tag: '700+ Products',
+    image: '/Generated/home-page/what-we-do-a.png',
   },
   {
     number: '03',
@@ -26,6 +28,7 @@ const services = [
       'Expert navigation of the Government e-Marketplace with successful tender bids, procurement facilitation, end-to-end installation, and compliance management for institutional buyers.',
     link: ROUTES.PROJECTS,
     tag: '50+ Projects',
+    image: '/Generated/home-page/what-we-do-c.png',
   },
 ];
 
@@ -70,7 +73,7 @@ export default function WhatWeDo() {
 
           {/* Right — service rows */}
           <div className="divide-y divide-[#EEF2F8]">
-            {services.map(({ number, title, description, link, tag }) => (
+            {services.map(({ number, title, description, link, tag, image }) => (
               <div key={number} className="py-8 group cursor-default">
                 <div className="flex gap-5 items-start">
                   <span
@@ -81,6 +84,11 @@ export default function WhatWeDo() {
                   >
                     {number}
                   </span>
+                  <img
+                    src={image}
+                    alt={title}
+                    className="hidden sm:block w-24 h-24 rounded-xl object-cover flex-shrink-0"
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-[1.05rem] font-bold text-[#0A1628] group-hover:text-[#C9A84C] transition-colors duration-200">

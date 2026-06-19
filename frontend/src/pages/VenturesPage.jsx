@@ -65,19 +65,20 @@ export default function VenturesPage() {
               return (
                 <Card key={venture.id} className="overflow-hidden" hover={false}>
                   <div className={`grid grid-cols-1 lg:grid-cols-2 ${!isEven ? '' : ''}`}>
-                    {/* Color panel */}
-                    <div
-                      className="flex flex-col items-center justify-center p-10"
-                      style={{ backgroundColor: `${venture.color}15` }}
-                    >
+                    {/* Photo panel */}
+                    <div className="relative flex flex-col items-center justify-center p-10 overflow-hidden" style={{ minHeight: 300 }}>
+                      {venture.image && (
+                        <img src={venture.image} alt={venture.name} className="absolute inset-0 w-full h-full object-cover" />
+                      )}
+                      <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${venture.color}b3, ${venture.color}e6)` }} />
                       <div
-                        className="w-20 h-20 rounded-2xl flex items-center justify-center mb-4"
-                        style={{ backgroundColor: venture.color }}
+                        className="relative z-10 w-20 h-20 rounded-2xl flex items-center justify-center mb-4"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.18)' }}
                       >
                         <Icon size={36} className="text-white" />
                       </div>
-                      <h2 className="text-xl font-bold text-[#0A1628] mb-1 text-center">{venture.name}</h2>
-                      <p className="text-sm font-medium text-center" style={{ color: venture.color }}>{venture.tagline}</p>
+                      <h2 className="relative z-10 text-xl font-bold text-white mb-1 text-center">{venture.name}</h2>
+                      <p className="relative z-10 text-sm font-medium text-center text-white/85">{venture.tagline}</p>
 
                       <div className="flex items-center gap-2 mt-4">
                         <Badge

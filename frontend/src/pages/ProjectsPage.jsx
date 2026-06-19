@@ -18,6 +18,7 @@ const staticProjects = [
     description: 'Supply and installation of 48 HD CCTV cameras with NVR and centralized monitoring at multiple police stations across Dehradun district.',
     tags: ['Surveillance', 'Security', 'GeM', 'Govt'],
     color: '#EBF4FF',
+    image: '/Generated/projects-page/installation-cctv.png',
     value: '₹12.5 Lakhs',
     year: '2024',
   },
@@ -29,6 +30,7 @@ const staticProjects = [
     description: 'Complete structured cabling, networking, and Wi-Fi setup for a secure research facility. Included firewall configuration and network security compliance.',
     tags: ['Networking', 'Defence', 'Infrastructure', 'Security'],
     color: '#FFF3CD',
+    image: '/Generated/projects-page/network-nifra.png',
     value: '₹18.2 Lakhs',
     year: '2024',
   },
@@ -40,6 +42,7 @@ const staticProjects = [
     description: 'Procurement of 50 desktop computers, 20 printers, and accessories for government offices via GeM marketplace.',
     tags: ['GeM', 'IT Equipment', 'Govt'],
     color: '#D4EDDA',
+    image: '/Generated/projects-page/delivery-dispatch.png',
     value: '₹8.7 Lakhs',
     year: '2024',
   },
@@ -51,6 +54,7 @@ const staticProjects = [
     description: 'Supply and installation of 15 UPS units (1-5 KVA) for critical IT infrastructure and medical equipment backup power.',
     tags: ['Power Solutions', 'Healthcare', 'Govt'],
     color: '#EBF4FF',
+    image: '/Generated/projects-page/network-nifra.png',
     value: '₹6.3 Lakhs',
     year: '2024',
   },
@@ -62,6 +66,7 @@ const staticProjects = [
     description: 'Supply of ruggedized communication handsets and accessories for remote border patrol operations.',
     tags: ['Communication', 'Defence', 'ITBP'],
     color: '#FFF3CD',
+    image: '/Generated/projects-page/installation-cctv.png',
     value: '₹22.1 Lakhs',
     year: '2025',
   },
@@ -73,6 +78,7 @@ const staticProjects = [
     description: 'Technology needs assessment and procurement advisory for skill development centers across 5 districts.',
     tags: ['Advisory', 'Tech', 'Education'],
     color: '#E8D5F5',
+    image: '/Generated/projects-page/delivery-dispatch.png',
     value: '₹3.5 Lakhs',
     year: '2025',
   },
@@ -147,7 +153,11 @@ export default function ProjectsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {filtered.map((project) => (
                 <Card key={project._id} className="overflow-hidden" hover>
-                  <div className="h-2" style={{ backgroundColor: project.color || '#EBF4FF' }} />
+                  {project.image ? (
+                    <img src={project.image} alt={project.name} className="w-full h-40 object-cover" />
+                  ) : (
+                    <div className="h-2" style={{ backgroundColor: project.color || '#EBF4FF' }} />
+                  )}
                   <div className="p-5">
                     <div className="flex items-center gap-2 mb-3">
                       <Badge type={badgeTypeMap[(project.clientType ?? project.category ?? 'govt').toLowerCase()] || 'govt'}>
