@@ -10,13 +10,16 @@ export default function ContactCTABanner() {
       className="relative overflow-hidden"
       style={{ backgroundColor: '#0A1628' }}
     >
-      {/* Subtle grid overlay */}
+      {/* Fiber optic background photo */}
+      <img
+        src="/Generated/home-page/contact-cta-banner.png"
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"
+      />
+      {/* Dark gradient overlay for text contrast */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.04]"
-        style={{
-          backgroundImage: 'linear-gradient(#C9A84C 1px, transparent 1px), linear-gradient(90deg, #C9A84C 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-        }}
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: 'linear-gradient(110deg, rgba(10,22,40,0.95) 30%, rgba(10,22,40,0.55) 100%)' }}
       />
       {/* Gold glow top-right */}
       <div

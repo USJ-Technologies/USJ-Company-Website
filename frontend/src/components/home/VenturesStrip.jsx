@@ -41,7 +41,11 @@ export default function VenturesStrip() {
             }
 
             return (
-              <Card key={venture.id} className="p-6 flex flex-col" hover>
+              <Card key={venture.id} className="overflow-hidden flex flex-col" hover>
+                {venture.image && (
+                  <img src={venture.image} alt={venture.name} className="w-full h-36 object-cover" />
+                )}
+                <div className="p-6 flex flex-col flex-1">
                 <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
                   style={{ backgroundColor: `${venture.color}15` }}
@@ -84,6 +88,7 @@ export default function VenturesStrip() {
                     <Clock size={13} /> Coming Soon
                   </span>
                 )}
+                </div>
               </Card>
             );
           })}

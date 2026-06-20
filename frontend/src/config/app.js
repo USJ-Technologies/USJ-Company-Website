@@ -32,6 +32,7 @@ export const APP_CONFIG = {
       isRevealed: true,
       icon: 'Scale',
       color: '#1A3A5C',
+      image: '/Generated/venture-page/legal.png',
     },
     {
       id: 'chalo-kumbh',
@@ -45,6 +46,7 @@ export const APP_CONFIG = {
       isRevealed: true,
       icon: 'Compass',
       color: '#C9A84C',
+      image: '/Generated/venture-page/outdoor.png',
     },
     {
       id: 'doon-travelers',

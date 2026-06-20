@@ -549,6 +549,12 @@ export default function CareersPage() {
               title="Life at USJ Technologies"
               subtitle="A place where your work matters, your ideas are heard, and your growth is our priority."
             />
+            <img
+              src="/Generated/careers/cul.png"
+              alt="USJ Technologies team collaborating in the office"
+              className="w-full h-64 object-cover rounded-2xl mb-10"
+              style={{ boxShadow: '0 16px 40px rgba(10,22,40,0.15)' }}
+            />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {cultureValues.map(({ icon: Icon, title, description }) => (
                 <Card key={title} className="p-5" hover>

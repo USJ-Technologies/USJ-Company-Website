@@ -98,9 +98,16 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* ── Right: Credentials panel ── */}
+        {/* ── Right: Photo + Credentials panel ── */}
         {/* Mobile */}
         <div className="lg:hidden w-full">
+          <div className="rounded-2xl overflow-hidden mb-4" style={{ boxShadow: '0 20px 50px rgba(10,22,40,0.25)' }}>
+            <img
+              src="/Generated/home-page/hero.png"
+              alt="USJ Technologies engineer working with networking hardware"
+              className="w-full h-56 object-cover"
+            />
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {credentials.map(({ icon: Icon, label, sub }) => (
               <div key={label} className="flex flex-col items-center text-center p-4 rounded-xl bg-white"
@@ -120,8 +127,19 @@ export default function HeroSection() {
         <div className="hidden lg:flex flex-1 items-center justify-center w-full">
           <div className="w-full" style={{ maxWidth: 420 }}>
 
+            {/* Photo */}
+            <div className="rounded-2xl overflow-hidden relative -mb-10 z-0"
+              style={{ boxShadow: '0 24px 60px rgba(10,22,40,0.35)' }}>
+              <img
+                src="/Generated/home-page/hero.png"
+                alt="USJ Technologies engineer working with networking hardware in a warehouse"
+                className="w-full h-64 object-cover"
+              />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 50%, rgba(10,22,40,0.55) 100%)' }} />
+            </div>
+
             {/* Main credential card */}
-            <div className="rounded-2xl p-6 mb-3"
+            <div className="rounded-2xl p-6 mb-3 relative z-10"
               style={{ backgroundColor: '#0A1628', boxShadow: '0 20px 60px rgba(10,22,40,0.4)' }}>
               <div className="flex items-center gap-3 mb-5 pb-5 border-b border-white/10">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm text-[#0A1628]"
