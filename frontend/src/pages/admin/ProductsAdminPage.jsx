@@ -21,6 +21,40 @@ function toSlug(brand, name) {
   return `${base}-${Date.now()}`;
 }
 
+// Resize (max width) + re-encode any selected image to WebP in the browser
+// before it ever hits the network. This keeps the storage bucket WebP-only
+// and is the main fix for slow uploads — a 2-3MB phone photo becomes a
+// ~50-150KB WebP, so the upload itself takes a fraction of the time.
+const MAX_UPLOAD_WIDTH = 1600;
+const WEBP_QUALITY = 0.82;
+
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read image file')); };
+    img.src = url;
+  });
+}
+
+async function compressImageToWebp(file) {
+  const img = await loadImageFromFile(file);
+  const scale = Math.min(1, MAX_UPLOAD_WIDTH / img.width);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(img.width * scale);
+  canvas.height = Math.round(img.height * scale);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error('WebP compression failed'))),
+      'image/webp',
+      WEBP_QUALITY
+    );
+  });
+}
+
 function SectionHeader({ title }) {
   return (
     <div className="flex items-center gap-2 mb-3">
@@ -49,7 +83,7 @@ const emptyForm = {
   name: '', model: '', brand_name: 'ENTER', category_name: '', description: '',
   slug: '', key_features: [], specifications: {}, in_box: [],
   primary_image_url: '', additionalImages: [], product_url: '',
-  is_active: true, is_featured: false, is_b2b: true, unit_price: '',
+  is_active: true, is_featured: false, is_b2b: true, unit_price: '', mrp: '',
 };
 
 function toFormData(p) {
@@ -73,6 +107,7 @@ function toFormData(p) {
     is_featured: p.is_featured ?? false,
     is_b2b: p.is_b2b ?? true,
     unit_price: p.unit_price != null ? String(p.unit_price) : '',
+    mrp: p.mrp != null ? String(p.mrp) : '',
   };
 }
 
@@ -247,17 +282,23 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
   const removeImg = (i) => set('additionalImages', form.additionalImages.filter((_, idx) => idx !== i));
 
   const uploadFile = async (file) => {
+    if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
     setUploading(true);
-    const ext = file.name.split('.').pop().toLowerCase();
-    const path = `manual/${form.slug || `product-${Date.now()}`}/${Date.now()}.${ext}`;
-    const { data, error } = await supabase.storage
-      .from('product-images')
-      .upload(path, file, { cacheControl: '3600', upsert: true });
-    setUploading(false);
-    if (error) { toast.error('Upload failed: ' + error.message); return; }
-    const url = supabase.storage.from('product-images').getPublicUrl(data.path).data.publicUrl;
-    set('primary_image_url', url);
-    toast.success('Image uploaded');
+    try {
+      const webpBlob = await compressImageToWebp(file);
+      const path = `manual/${form.slug || `product-${Date.now()}`}/${Date.now()}.webp`;
+      const { data, error } = await supabase.storage
+        .from('product-images')
+        .upload(path, webpBlob, { cacheControl: '31536000', upsert: true, contentType: 'image/webp' });
+      if (error) throw error;
+      const url = supabase.storage.from('product-images').getPublicUrl(data.path).data.publicUrl;
+      set('primary_image_url', url);
+      toast.success(`Image uploaded (${(webpBlob.size / 1024).toFixed(0)} KB as WebP)`);
+    } catch (err) {
+      toast.error('Upload failed: ' + err.message);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = () => {
@@ -351,21 +392,38 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
                 />
               </FieldRow>
 
-              <FieldRow label="Unit Price (₹)">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#718096] pointer-events-none">₹</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.unit_price}
-                    onChange={e => set('unit_price', e.target.value)}
-                    className={`${inputCls} pl-7`}
-                    placeholder="Leave blank to show 'Price on Request'"
-                  />
-                </div>
-                <p className="text-[10px] text-[#718096] mt-1">Shown on product cards and detail pages. Leave blank for B2B quote-only pricing.</p>
-              </FieldRow>
+              <div className="grid grid-cols-2 gap-4">
+                <FieldRow label="MRP (₹)">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#718096] pointer-events-none">₹</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.mrp}
+                      onChange={e => set('mrp', e.target.value)}
+                      className={`${inputCls} pl-7`}
+                      placeholder="Optional"
+                    />
+                  </div>
+                  <p className="text-[10px] text-[#718096] mt-1">Shown struck-through next to our price.</p>
+                </FieldRow>
+                <FieldRow label="Our Price (₹)">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#718096] pointer-events-none">₹</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.unit_price}
+                      onChange={e => set('unit_price', e.target.value)}
+                      className={`${inputCls} pl-7`}
+                      placeholder="Leave blank for 'Price on Request'"
+                    />
+                  </div>
+                  <p className="text-[10px] text-[#718096] mt-1">Leave blank for B2B quote-only pricing.</p>
+                </FieldRow>
+              </div>
             </div>
           </div>
 
@@ -488,9 +546,9 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
                       disabled={uploading}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-[#E2E8F0] rounded-[6px] text-[#4A5568] hover:border-[#0A1628] disabled:opacity-50"
                     >
-                      <Upload size={13} /> {uploading ? 'Uploading…' : 'Upload Image'}
+                      <Upload size={13} /> {uploading ? 'Compressing & uploading…' : 'Upload Image'}
                     </button>
-                    <span className="text-[10px] text-[#718096]">Uploads to Supabase Storage</span>
+                    <span className="text-[10px] text-[#718096]">Auto-resized & converted to WebP</span>
                   </div>
                 </div>
                 {form.primary_image_url && (
@@ -650,6 +708,7 @@ const ProductsAdminPage = () => {
       is_featured: formData.is_featured,
       is_b2b: formData.is_b2b,
       unit_price: formData.unit_price !== '' && formData.unit_price != null ? parseFloat(formData.unit_price) : null,
+      mrp: formData.mrp !== '' && formData.mrp != null ? parseFloat(formData.mrp) : null,
       updated_at: new Date().toISOString(),
     };
 

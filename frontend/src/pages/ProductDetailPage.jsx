@@ -252,10 +252,22 @@ export default function ProductDetailPage() {
               {/* Price */}
               <div className="mb-4 pb-4 border-b border-[#E2E8F0]">
                 {product.unit_price != null ? (
-                  <p className="text-2xl font-bold text-[#0A1628]">
-                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(product.unit_price)}
-                    <span className="text-sm font-normal text-[#718096] ml-2">per unit</span>
-                  </p>
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <p className="text-2xl font-bold text-[#0A1628]">
+                      {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(product.unit_price)}
+                      <span className="text-sm font-normal text-[#718096] ml-2">per unit</span>
+                    </p>
+                    {product.mrp != null && product.mrp > product.unit_price && (
+                      <>
+                        <span className="text-base text-[#94A3B8] line-through">
+                          {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(product.mrp)}
+                        </span>
+                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          {Math.round((1 - product.unit_price / product.mrp) * 100)}% off MRP
+                        </span>
+                      </>
+                    )}
+                  </div>
                 ) : (
                   <p className="text-lg font-semibold text-[#4A5568]">Price on Request</p>
                 )}

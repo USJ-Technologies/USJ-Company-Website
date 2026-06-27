@@ -5,6 +5,9 @@ import useCartStore from '../../store/cartStore';
 
 const BRAND_COLOR = { ENTER: '#1A56DB', TENDA: '#2D7D46', ZOOOK: '#C9A84C' };
 
+const formatINR = (value) =>
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value);
+
 export default function ProductCard({ product }) {
   const [imgError, setImgError] = useState(false);
   const [added, setAdded] = useState(false);
@@ -92,9 +95,17 @@ export default function ProductCard({ product }) {
         {/* Price */}
         <div className="mb-3">
           {product.unit_price != null ? (
-            <p className="text-base font-bold text-[#0A1628]">
-              {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(product.unit_price)}
-            </p>
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <p className="text-base font-bold text-[#0A1628]">{formatINR(product.unit_price)}</p>
+              {product.mrp != null && product.mrp > product.unit_price && (
+                <>
+                  <span className="text-xs text-[#94A3B8] line-through">{formatINR(product.mrp)}</span>
+                  <span className="text-[10px] font-bold text-emerald-600">
+                    {Math.round((1 - product.unit_price / product.mrp) * 100)}% off
+                  </span>
+                </>
+              )}
+            </div>
           ) : (
             <p className="text-xs text-[#64748B]">Price on Request</p>
           )}

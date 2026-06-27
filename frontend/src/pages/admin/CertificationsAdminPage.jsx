@@ -93,9 +93,9 @@ export default function CertificationsAdminPage() {
       canvas.toBlob(
         (blob) => {
           URL.revokeObjectURL(objectUrl);
-          resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+          resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' }));
         },
-        'image/jpeg',
+        'image/webp',
         0.82,
       );
     };

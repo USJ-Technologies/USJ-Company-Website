@@ -20,7 +20,7 @@ export async function getProducts({
 } = {}) {
   let query = supabase
     .from('products')
-    .select('id, name, slug, brand_name, category_name, primary_image_url, is_b2b, is_featured, model, unit_price', { count: 'exact' })
+    .select('id, name, slug, brand_name, category_name, primary_image_url, is_b2b, is_featured, model, unit_price, mrp', { count: 'exact' })
     .eq('is_active', true)
     .order('is_featured', { ascending: false })
     .order('id', { ascending: true })
@@ -75,7 +75,7 @@ export async function getProductBySlug(slug) {
 export async function getFeaturedProducts(limit = 8) {
   const { data: featured } = await supabase
     .from('products')
-    .select('id, name, slug, brand_name, category_name, primary_image_url, is_b2b, is_featured, unit_price')
+    .select('id, name, slug, brand_name, category_name, primary_image_url, is_b2b, is_featured, unit_price, mrp')
     .eq('is_active', true)
     .eq('is_featured', true)
     .limit(limit)
@@ -86,7 +86,7 @@ export async function getFeaturedProducts(limit = 8) {
   // Fallback: most recently added active products
   return supabase
     .from('products')
-    .select('id, name, slug, brand_name, category_name, primary_image_url, is_b2b, is_featured, unit_price')
+    .select('id, name, slug, brand_name, category_name, primary_image_url, is_b2b, is_featured, unit_price, mrp')
     .eq('is_active', true)
     .limit(limit)
     .order('created_at', { ascending: false });
@@ -242,7 +242,7 @@ export async function getSmartProducts(userId = null, limit = 8) {
   // Pull a larger pool of high-value products: B2B first, then featured, then recent
   const { data: pool, error } = await supabase
     .from('products')
-    .select('id, name, slug, brand_name, category_name, primary_image_url, is_b2b, is_featured, unit_price')
+    .select('id, name, slug, brand_name, category_name, primary_image_url, is_b2b, is_featured, unit_price, mrp')
     .eq('is_active', true)
     .order('is_b2b', { ascending: false })
     .order('is_featured', { ascending: false })
@@ -304,7 +304,7 @@ export async function getRecommendedForUser(userId, limit = 4) {
   // Fetch products from preferred brands OR categories
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, slug, brand_name, category_name, primary_image_url, is_b2b, is_featured, unit_price')
+    .select('id, name, slug, brand_name, category_name, primary_image_url, is_b2b, is_featured, unit_price, mrp')
     .eq('is_active', true)
     .in('brand_name', topBrands.length ? topBrands : ['__none__'])
     .order('is_b2b', { ascending: false })
@@ -317,7 +317,7 @@ export async function getRecommendedForUser(userId, limit = 4) {
   if (candidates.length < limit && topCategories.length) {
     const { data: catData } = await supabase
       .from('products')
-      .select('id, name, slug, brand_name, category_name, primary_image_url, is_b2b, is_featured, unit_price')
+      .select('id, name, slug, brand_name, category_name, primary_image_url, is_b2b, is_featured, unit_price, mrp')
       .eq('is_active', true)
       .in('category_name', topCategories.slice(0, 3))
       .order('is_b2b', { ascending: false })
