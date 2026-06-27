@@ -281,6 +281,18 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
   };
   const removeImg = (i) => set('additionalImages', form.additionalImages.filter((_, idx) => idx !== i));
 
+  // Paths uploaded during this form session that aren't confirmed saved yet.
+  // If the admin cancels/closes without saving, these get deleted from storage
+  // so cancelled uploads don't linger as orphan files.
+  const uploadedPathsRef = useRef([]);
+
+  const urlToStoragePath = (url) => {
+    if (!url) return null;
+    const MARKER = '/product-images/';
+    const i = url.indexOf(MARKER);
+    return i === -1 ? null : url.slice(i + MARKER.length);
+  };
+
   const uploadFile = async (file) => {
     if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
     setUploading(true);
@@ -292,6 +304,16 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
         .upload(path, webpBlob, { cacheControl: '31536000', upsert: true, contentType: 'image/webp' });
       if (error) throw error;
       const url = supabase.storage.from('product-images').getPublicUrl(data.path).data.publicUrl;
+
+      // Replacing an upload from this same session — the superseded file is
+      // now orphaned, delete it immediately rather than waiting for cancel.
+      const prevPath = urlToStoragePath(form.primary_image_url);
+      if (prevPath && uploadedPathsRef.current.includes(prevPath)) {
+        supabase.storage.from('product-images').remove([prevPath]).catch(() => {});
+        uploadedPathsRef.current = uploadedPathsRef.current.filter((p) => p !== prevPath);
+      }
+
+      uploadedPathsRef.current.push(data.path);
       set('primary_image_url', url);
       toast.success(`Image uploaded (${(webpBlob.size / 1024).toFixed(0)} KB as WebP)`);
     } catch (err) {
@@ -299,6 +321,14 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleClose = () => {
+    if (uploadedPathsRef.current.length) {
+      supabase.storage.from('product-images').remove(uploadedPathsRef.current).catch(() => {});
+      uploadedPathsRef.current = [];
+    }
+    onClose();
   };
 
   const handleSubmit = () => {
@@ -312,7 +342,7 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="flex-1 bg-black/40" onClick={onClose} />
+      <div className="flex-1 bg-black/40" onClick={handleClose} />
       <div className="w-full max-w-2xl bg-white flex flex-col shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E2E8F0] bg-[#0A1628]">
@@ -320,7 +350,7 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
             <h2 className="font-bold text-white">{initialData ? 'Edit Product' : 'Add New Product'}</h2>
             <p className="text-xs text-[#A0AEC0] mt-0.5">Fill in the details below. * fields are required.</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-md text-[#A0AEC0] hover:text-white hover:bg-white/10">
+          <button onClick={handleClose} className="p-1.5 rounded-md text-[#A0AEC0] hover:text-white hover:bg-white/10">
             <X size={18} />
           </button>
         </div>
@@ -619,7 +649,7 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
 
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-[#E2E8F0] bg-white">
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-[#4A5568] border border-[#E2E8F0] rounded-[6px] hover:border-[#0A1628]">
+          <button onClick={handleClose} className="px-4 py-2 text-sm font-medium text-[#4A5568] border border-[#E2E8F0] rounded-[6px] hover:border-[#0A1628]">
             Cancel
           </button>
           <button
