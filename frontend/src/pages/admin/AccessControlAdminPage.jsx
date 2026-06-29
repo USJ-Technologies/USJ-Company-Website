@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Shield, Plus, Trash2, X, Edit2, Save, UserCheck, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
+import useAuthStore from '../../store/authStore';
 
 const ROLE_OPTIONS = [
   { value: 'admin',   label: 'Admin',   description: 'Full access — all admin pages including this one', color: '#1A56DB' },
@@ -24,8 +25,9 @@ export default function AccessControlAdminPage() {
   const [form, setForm] = useState({ email: '', role: 'staff', notes: '' });
   const [saving, setSaving] = useState(false);
   const [editingUser, setEditingUser] = useState(null); // { id, role }
+  const isAdmin = useAuthStore((s) => s.isAdmin());
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { if (isAdmin) fetchData(); }, [isAdmin]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -95,6 +97,16 @@ export default function AccessControlAdminPage() {
     setActiveUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: newRole } : u));
     setEditingUser(null);
   };
+
+  if (!isAdmin) {
+    return (
+      <div className="bg-white rounded-xl border border-[#E2E8F0] p-8 text-center">
+        <Shield size={32} className="mx-auto text-gray-300 mb-3" />
+        <p className="text-sm font-semibold text-[#0A1628]">Admins only</p>
+        <p className="text-xs text-[#718096] mt-1">Role and access management is restricted to admin accounts.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

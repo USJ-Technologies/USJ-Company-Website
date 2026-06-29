@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
+import { isSafeExternalUrl } from '../../lib/url';
 
 // ── Constants ─────────────────────────────────────────────────
 const DEPARTMENTS = ['Technology', 'Sales', 'Operations', 'Business Development', 'Marketing', 'Finance', 'HR', 'Other'];
@@ -291,7 +292,7 @@ function AppDetailPanel({ app, onClose, onStatusChange }) {
             <p><span className="font-medium text-[#0A1628]">Email:</span>{' '}
               <a href={`mailto:${app.email}`} className="text-[#C9A84C] hover:underline">{app.email}</a></p>
             {app.phone && <p><span className="font-medium text-[#0A1628]">Phone:</span> {app.phone}</p>}
-            {app.linkedin_url && (
+            {app.linkedin_url && isSafeExternalUrl(app.linkedin_url) && (
               <p><span className="font-medium text-[#0A1628]">LinkedIn:</span>{' '}
                 <a href={app.linkedin_url} target="_blank" rel="noopener noreferrer"
                   className="text-[#C9A84C] hover:underline inline-flex items-center gap-1">

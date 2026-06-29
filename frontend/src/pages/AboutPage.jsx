@@ -6,6 +6,7 @@ import SectionHeader from '../components/ui/SectionHeader';
 import Card from '../components/ui/Card';
 import { APP_CONFIG, ROUTES } from '../config/app';
 import { supabase } from '../lib/supabase';
+import { isSafeExternalUrl } from '../lib/url';
 
 const values = [
   { icon: Zap, title: 'Innovation', description: 'We embrace emerging technologies to deliver modern, efficient solutions that keep our clients ahead of the curve.' },
@@ -221,7 +222,7 @@ export default function AboutPage() {
                     <p className="text-sm text-[#4A5568] leading-relaxed mb-3">{member.bio}</p>
                   )}
                   <div className="flex items-center justify-center gap-3">
-                    {member.linkedin_url && (
+                    {member.linkedin_url && isSafeExternalUrl(member.linkedin_url) && (
                       <a href={member.linkedin_url} target="_blank" rel="noopener noreferrer"
                         className="text-[#718096] hover:text-[#0A1628] transition-colors">
                         <Linkedin size={15} />

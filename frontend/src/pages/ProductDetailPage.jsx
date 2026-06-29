@@ -11,6 +11,7 @@ import useAuthStore from '../store/authStore';
 import Skeleton from '../components/ui/Skeleton';
 import { APP_CONFIG, ROUTES } from '../config/app';
 import SEOHead from '../components/seo/SEOHead';
+import { isSafeExternalUrl } from '../lib/url';
 
 const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://usjtechnologies.com';
 
@@ -296,7 +297,7 @@ export default function ProductDetailPage() {
                       >
                         <Mail size={12} /> Request Datasheet
                       </Link>
-                      {product.product_url && (
+                      {product.product_url && isSafeExternalUrl(product.product_url) && (
                         <a
                           href={product.product_url}
                           target="_blank"
@@ -353,7 +354,7 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Manufacturer link (if description exists, show it here subtly) */}
-              {product.product_url && product.description && (
+              {product.product_url && product.description && isSafeExternalUrl(product.product_url) && (
                 <a
                   href={product.product_url}
                   target="_blank"
