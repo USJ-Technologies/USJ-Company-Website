@@ -55,6 +55,7 @@ export default function CertModal({ cert, isOpen, onClose }) {
             <img
               src={imageUrl}
               alt={cert.name}
+              loading="lazy"
               className="max-h-56 object-contain"
             />
           ) : (

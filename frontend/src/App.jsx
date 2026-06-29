@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import useAuthStore from './store/authStore';
 import useCartStore from './store/cartStore';
 import { getCartFromDb } from './lib/queries';
+import { Routes, Route, useLocation } from 'react-router-dom';
 
 // Layouts & Wrappers
 import Layout from './components/layout/Layout';
@@ -59,6 +60,17 @@ const App = () => {
       });
     }
   }, [isAuthenticated, mergeWithDb]);
+
+// Track pageviews in GA4 on every route change (SPA navigation doesn't reload the page)
+const location = useLocation();
+useEffect(() => {
+  if (typeof window.gtag !== 'function') return;
+  window.gtag('event', 'page_view', {
+    page_path: location.pathname + location.search,
+    page_location: window.location.href,
+    page_title: document.title,
+  });
+}, [location]);
 
   return (
     <Routes>

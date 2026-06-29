@@ -62,6 +62,7 @@ export default function CartPage() {
                       <img
                         src={p.primary_image_url}
                         alt={p.name}
+                        loading="lazy"
                         className="w-full h-full object-contain p-1"
                       />
                     ) : (

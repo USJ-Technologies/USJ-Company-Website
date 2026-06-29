@@ -110,6 +110,7 @@ export default function AboutPage() {
               <img
                 src="/Generated/about/story-office-cul.png"
                 alt="USJ Technologies team working in the office"
+                loading="lazy"
                 className="w-full h-56 object-cover rounded-2xl mb-6"
                 style={{ boxShadow: '0 16px 40px rgba(10,22,40,0.15)' }}
               />
@@ -203,6 +204,7 @@ export default function AboutPage() {
                     <img
                       src={member.image_url}
                       alt={member.name}
+                      loading="lazy"
                       className="w-20 h-20 rounded-full object-cover mx-auto mb-4 border-2 border-[#E2E8F0]"
                     />
                   ) : (

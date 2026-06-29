@@ -51,7 +51,7 @@ export default function CertStrip() {
                 style={{ width: 160 }}
               >
                 {cert.image_url ?? cert.imageUrl ? (
-                  <img src={cert.image_url ?? cert.imageUrl} alt={cert.name} className="w-full h-24 object-contain rounded" />
+                  <img src={cert.image_url ?? cert.imageUrl} alt={cert.name} loading="lazy" className="w-full h-24 object-contain rounded" />
                 ) : (
                   <div className="w-full h-24 bg-gray-200 rounded flex items-center justify-center">
                     <Image size={28} className="text-gray-400" />
@@ -70,7 +70,7 @@ export default function CertStrip() {
         {selected && (
           <div>
             {(selected.image_url ?? selected.imageUrl) ? (
-              <img src={selected.image_url ?? selected.imageUrl} alt={selected.name} className="w-full h-48 object-contain rounded-lg mb-4 bg-gray-100" />
+              <img src={selected.image_url ?? selected.imageUrl} alt={selected.name} loading="lazy" className="w-full h-48 object-contain rounded-lg mb-4 bg-gray-100" />
             ) : (
               <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
                 <Image size={40} className="text-gray-300" />

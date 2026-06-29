@@ -35,7 +35,8 @@ const WishlistPage = () => {
               <Link to={`/product/${product.slug}`} className="relative aspect-square mb-4 rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center p-4">
                 <img 
                   src={product.images?.[0] || product.imageUrl || product.image || 'https://via.placeholder.com/300'} 
-                  alt={product.name} 
+                  alt={product.name}
+                  loading="lazy"
                   className="max-w-full max-h-full object-contain"
                 />
               </Link>

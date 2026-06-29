@@ -151,6 +151,7 @@ export default function ServicesPage() {
                   <img
                     src={svc.image}
                     alt={svc.title}
+                    loading="lazy"
                     className="w-full h-48 object-cover rounded-xl mb-4"
                     style={{ boxShadow: '0 12px 32px rgba(10,22,40,0.15)' }}
                   />

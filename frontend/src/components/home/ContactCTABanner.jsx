@@ -14,6 +14,7 @@ export default function ContactCTABanner() {
       <img
         src="/Generated/home-page/contact-cta-banner.png"
         alt=""
+        loading="lazy"
         className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"
       />
       {/* Dark gradient overlay for text contrast */}

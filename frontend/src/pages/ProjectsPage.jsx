@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Briefcase, X } from 'lucide-react';
+import SEOHead from '../components/seo/SEOHead';
 import SectionHeader from '../components/ui/SectionHeader';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -107,6 +108,22 @@ export default function ProjectsPage() {
       });
 
   return (
+    <>
+      <SEOHead
+        title="Projects & Portfolio"
+        description="Explore USJ Technologies' portfolio of government, defence, and commercial IT projects — CCTV surveillance, networking infrastructure, GeM procurement, and technology deployments across Uttarakhand and India."
+        keywords="IT projects Dehradun, government technology projects Uttarakhand, defence IT projects India, CCTV installation projects, networking infrastructure projects, GeM procurement projects, USJ Technologies portfolio, surveillance systems deployment, technology projects North India"
+        canonical="/projects"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          'name': 'USJ Technologies Projects Portfolio',
+          'description': 'Government, defence, and commercial technology projects delivered by USJ Technologies across India — surveillance, networking, GeM procurement, and IT infrastructure.',
+          'url': 'https://usjtechnologies.com/projects',
+          'isPartOf': { '@id': 'https://usjtechnologies.com/#website' },
+          'about': { '@id': 'https://usjtechnologies.com/#organization' },
+        }}
+      />
     <div>
       {/* Hero */}
       <section className="section-py hero-pattern">
@@ -154,7 +171,7 @@ export default function ProjectsPage() {
               {filtered.map((project) => (
                 <Card key={project._id} className="overflow-hidden" hover>
                   {project.image ? (
-                    <img src={project.image} alt={project.name} className="w-full h-40 object-cover" />
+                    <img src={project.image} alt={project.name} loading="lazy" className="w-full h-40 object-cover" />
                   ) : (
                     <div className="h-2" style={{ backgroundColor: project.color || '#EBF4FF' }} />
                   )}
@@ -227,5 +244,6 @@ export default function ProjectsPage() {
         )}
       </Modal>
     </div>
+    </>
   );
 }

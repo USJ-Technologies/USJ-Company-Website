@@ -87,7 +87,7 @@ export default function ProjectsShowcase() {
               return (
               <Card key={project.id ?? project._id} className="overflow-hidden" hover>
                 {project.image ? (
-                  <img src={project.image} alt={project.name} className="w-full h-36 object-cover" />
+                  <img src={project.image} alt={project.name} loading="lazy" className="w-full h-36 object-cover" />
                 ) : (
                   <div className="h-3" style={{ backgroundColor: project.color || '#EBF4FF' }} />
                 )}

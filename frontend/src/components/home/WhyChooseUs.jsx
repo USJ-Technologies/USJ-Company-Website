@@ -53,6 +53,7 @@ export default function WhyChooseUs() {
           <img
             src="/Generated/home-page/why-choose-us.png"
             alt="Carefully packing a networking product for delivery"
+            loading="lazy"
             className="hidden md:block w-64 h-40 rounded-2xl object-cover flex-shrink-0"
             style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.4)' }}
           />

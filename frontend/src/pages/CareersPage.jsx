@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   MapPin, Zap, Users, Heart, Laptop, TrendingUp,
   Briefcase, Clock, ChevronRight, X, Upload, CheckCircle,
@@ -20,6 +20,16 @@ const TYPE_LABEL = {
 const EXP_LABEL = {
   entry: 'Entry Level', mid: 'Mid Level', senior: 'Senior Level', lead: 'Lead / Manager',
 };
+
+const EMPLOYMENT_TYPE_MAP = {
+  full_time: 'FULL_TIME',
+  part_time: 'PART_TIME',
+  internship: 'INTERN',
+  contract: 'CONTRACTOR',
+  remote: 'TELECOMMUTE',
+};
+
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://usjtechnologies.com';
 
 const TYPE_COLOR = {
   full_time:  { bg: '#EBF4FF', text: '#1A3A5C' },
@@ -517,6 +527,52 @@ export default function CareersPage() {
 
   const activeCount = jobs.length;
 
+  const careersStructuredData = useMemo(() => {
+    if (!jobs.length) return undefined;
+
+    return {
+      '@context': 'https://schema.org',
+      '@graph': jobs.map((job) => ({
+        '@type': 'JobPosting',
+        'title': job.title,
+        'description': job.description,
+        ...(job.created_at ? { 'datePosted': job.created_at.split('T')[0] } : {}),
+        'hiringOrganization': {
+          '@type': 'Organization',
+          'name': 'USJ Technologies (OPC) Pvt Ltd',
+          'sameAs': SITE_URL,
+          'logo': `${SITE_URL}/favicon.svg`,
+        },
+        'jobLocation': {
+          '@type': 'Place',
+          'address': {
+            '@type': 'PostalAddress',
+            'addressLocality': job.location || 'Dehradun',
+            'addressRegion': 'Uttarakhand',
+            'addressCountry': 'IN',
+          },
+        },
+        'employmentType': EMPLOYMENT_TYPE_MAP[job.type] ?? 'FULL_TIME',
+        ...(job.salary_min || job.salary_max
+          ? {
+              'baseSalary': {
+                '@type': 'MonetaryAmount',
+                'currency': 'INR',
+                'value': {
+                  '@type': 'QuantitativeValue',
+                  ...(job.salary_min ? { 'minValue': job.salary_min } : {}),
+                  ...(job.salary_max ? { 'maxValue': job.salary_max } : {}),
+                  'unitText': 'MONTH',
+                },
+              },
+            }
+          : {}),
+        'url': `${SITE_URL}/careers`,
+        'directApply': true,
+      })),
+    };
+  }, [jobs]);
+
   return (
     <>
       <SEOHead
@@ -524,6 +580,7 @@ export default function CareersPage() {
         description={`Join USJ Technologies in Dehradun, Uttarakhand. ${activeCount > 0 ? `${activeCount} open position${activeCount !== 1 ? 's' : ''} across technology, sales, and operations.` : 'Explore opportunities at a Startup India certified IT company.'} Work with us to build government and defence technology solutions.`}
         keywords="jobs in Dehradun, IT jobs Uttarakhand, technology jobs Dehradun, career IT company Uttarakhand, hiring Dehradun startup, USJ Technologies careers, government technology jobs North India, software engineer Dehradun, sales executive Dehradun"
         canonical="/careers"
+        structuredData={careersStructuredData}
       />
 
       <div>
@@ -552,6 +609,7 @@ export default function CareersPage() {
             <img
               src="/Generated/careers/cul.png"
               alt="USJ Technologies team collaborating in the office"
+              loading="lazy"
               className="w-full h-64 object-cover rounded-2xl mb-10"
               style={{ boxShadow: '0 16px 40px rgba(10,22,40,0.15)' }}
             />

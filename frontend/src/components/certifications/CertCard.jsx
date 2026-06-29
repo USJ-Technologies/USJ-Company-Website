@@ -25,6 +25,7 @@ export default function CertCard({ cert }) {
             <img
               src={imageUrl}
               alt={cert.name}
+              loading="lazy"
               onError={() => setImgError(true)}
               className="w-full h-full object-contain p-4"
             />

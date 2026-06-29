@@ -87,6 +87,7 @@ export default function WhatWeDo() {
                   <img
                     src={image}
                     alt={title}
+                    loading="lazy"
                     className="hidden sm:block w-24 h-24 rounded-xl object-cover flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">

@@ -214,7 +214,7 @@ export default function ProductDetailPage() {
                       onClick={() => setActiveImage(url)}
                       className={`flex-shrink-0 w-16 h-16 rounded-lg border-2 overflow-hidden transition-all bg-[#F8F9FA] ${activeImage === url ? 'border-[#C9A84C]' : 'border-transparent hover:border-gray-300'}`}
                     >
-                      <img src={url} alt={`View ${i + 1}`} className="w-full h-full object-contain p-1" />
+                      <img src={url} alt={`View ${i + 1}`} loading="lazy" className="w-full h-full object-contain p-1" />
                     </button>
                   ))}
                 </div>

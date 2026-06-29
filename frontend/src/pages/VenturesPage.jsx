@@ -9,8 +9,27 @@ import { APP_CONFIG, ROUTES } from '../config/app';
 
 const iconMap = { Scale, Compass, Mountain };
 
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://usjtechnologies.com';
+
 export default function VenturesPage() {
   const { ventures } = APP_CONFIG;
+
+  const venturesStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': `${SITE_URL}/#organization`,
+    'name': 'USJ Technologies (OPC) Pvt Ltd',
+    'url': SITE_URL,
+    'description': 'USJ Technologies is a Dehradun-based IT company building an ecosystem of ventures across technology, legal services, pilgrimage travel, and tourism.',
+    'subOrganization': ventures
+      .filter((v) => v.isRevealed)
+      .map((v) => ({
+        '@type': 'Organization',
+        'name': v.name,
+        'description': v.description,
+        ...(v.websiteUrl ? { 'url': v.websiteUrl } : {}),
+      })),
+  };
 
   return (
     <>
@@ -19,6 +38,7 @@ export default function VenturesPage() {
         description="USJ Technologies group ventures include Bail & Beyond Law Chambers, Chalo Kumbh, and Doon Travelers – businesses based in Uttarakhand offering legal, travel, and pilgrimage services."
         keywords="USJ Technologies ventures, Bail and Beyond law Uttarakhand, Chalo Kumbh Dehradun, Doon Travelers Uttarakhand, technology group companies Dehradun, business ventures Uttarakhand"
         canonical="/ventures"
+        structuredData={venturesStructuredData}
       />
       <div>
       {/* Hero */}
@@ -68,7 +88,7 @@ export default function VenturesPage() {
                     {/* Photo panel */}
                     <div className="relative flex flex-col items-center justify-center p-10 overflow-hidden" style={{ minHeight: 300 }}>
                       {venture.image && (
-                        <img src={venture.image} alt={venture.name} className="absolute inset-0 w-full h-full object-cover" />
+                        <img src={venture.image} alt={venture.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
                       )}
                       <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${venture.color}b3, ${venture.color}e6)` }} />
                       <div
