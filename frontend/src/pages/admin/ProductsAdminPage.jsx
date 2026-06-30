@@ -672,6 +672,7 @@ const ProductsAdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null); // null = new
@@ -695,11 +696,15 @@ const ProductsAdminPage = () => {
       .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
     if (search) query = query.ilike('name', `%${search}%`);
     if (brandFilter) query = query.eq('brand_name', brandFilter);
+    if (statusFilter === 'priced')     query = query.not('unit_price', 'is', null);
+    if (statusFilter === 'unpriced')   query = query.is('unit_price', null);
+    if (statusFilter === 'with_image') query = query.not('primary_image_url', 'is', null).neq('primary_image_url', '');
+    if (statusFilter === 'no_image')   query = query.or('primary_image_url.is.null,primary_image_url.eq.');
     const { data, count, error } = await query;
     if (error) toast.error('Failed to load products');
     else { setProducts(data ?? []); setTotal(count ?? 0); }
     setLoading(false);
-  }, [search, brandFilter, page]);
+  }, [search, brandFilter, statusFilter, page]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
@@ -835,30 +840,57 @@ const ProductsAdminPage = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#718096]" />
-          <input
-            type="text"
-            placeholder="Search products…"
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
-            className="w-full pl-9 pr-3 py-2 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C] bg-white"
-          />
+      <div className="space-y-2">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#718096]" />
+            <input
+              type="text"
+              placeholder="Search products…"
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              className="w-full pl-9 pr-3 py-2 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C] bg-white"
+            />
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {['', ...filterBrands].map(b => (
+              <button
+                key={b}
+                onClick={() => { setBrandFilter(b); setPage(1); }}
+                className="px-3 py-2 text-xs font-semibold rounded-[6px] border transition-colors"
+                style={{
+                  borderColor: brandFilter === b ? '#0A1628' : '#E2E8F0',
+                  backgroundColor: brandFilter === b ? '#0A1628' : 'transparent',
+                  color: brandFilter === b ? '#fff' : '#4A5568',
+                }}
+              >
+                {b || 'All'}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          {['', ...filterBrands].map(b => (
+
+        {/* Status filter */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-semibold text-[#718096] shrink-0">Status:</span>
+          {[
+            { value: '',           label: 'All Products' },
+            { value: 'priced',     label: '✓ With Price' },
+            { value: 'unpriced',   label: '✗ No Price' },
+            { value: 'with_image', label: '✓ With Image' },
+            { value: 'no_image',   label: '✗ No Image' },
+          ].map(({ value, label }) => (
             <button
-              key={b}
-              onClick={() => { setBrandFilter(b); setPage(1); }}
-              className="px-3 py-2 text-xs font-semibold rounded-[6px] border transition-colors"
+              key={value}
+              onClick={() => { setStatusFilter(value); setPage(1); }}
+              className="px-3 py-1.5 text-xs font-semibold rounded-[6px] border transition-colors"
               style={{
-                borderColor: brandFilter === b ? '#0A1628' : '#E2E8F0',
-                backgroundColor: brandFilter === b ? '#0A1628' : 'transparent',
-                color: brandFilter === b ? '#fff' : '#4A5568',
+                borderColor: statusFilter === value ? '#C9A84C' : '#E2E8F0',
+                backgroundColor: statusFilter === value ? '#FFF8E7' : 'transparent',
+                color: statusFilter === value ? '#92700A' : '#4A5568',
               }}
             >
-              {b || 'All'}
+              {label}
             </button>
           ))}
         </div>
