@@ -77,7 +77,7 @@ export default function CertificationsAdminPage() {
   };
 
   const compressImage = (file) => new Promise((resolve) => {
-    const img = new Image();
+    const img = new window.Image();
     const objectUrl = URL.createObjectURL(file);
     img.onload = () => {
       const MAX_W = 1400;

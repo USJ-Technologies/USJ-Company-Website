@@ -689,7 +689,7 @@ const ProductsAdminPage = () => {
     setLoading(true);
     let query = supabase
       .from('products')
-      .select('id, name, slug, brand_name, category_name, primary_image_url, is_active, is_featured, is_b2b, model', { count: 'exact' })
+      .select('id, name, slug, brand_name, category_name, primary_image_url, is_active, is_featured, is_b2b, model, unit_price, mrp, updated_at', { count: 'exact' })
       .order('brand_name')
       .order('name')
       .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
@@ -872,6 +872,7 @@ const ProductsAdminPage = () => {
               <tr className="bg-[#F8F9FA] border-b border-[#E2E8F0] text-xs uppercase tracking-wider text-[#718096]">
                 <th className="px-4 py-3 font-semibold">Product</th>
                 <th className="px-4 py-3 font-semibold hidden sm:table-cell">Brand / Category</th>
+                <th className="px-4 py-3 font-semibold hidden md:table-cell">Price</th>
                 <th className="px-4 py-3 font-semibold text-center">Active</th>
                 <th className="px-4 py-3 font-semibold text-center">Featured</th>
                 <th className="px-4 py-3 font-semibold text-right">Actions</th>
@@ -916,6 +917,23 @@ const ProductsAdminPage = () => {
                         <span className="text-[10px] font-bold tracking-wider" style={{ color: BRAND_COLORS[p.brand_name] ?? '#718096' }}>{p.brand_name}</span>
                         <span className="text-xs text-[#718096] truncate max-w-[120px]">{p.category_name}</span>
                       </div>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      {p.unit_price != null ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-semibold text-[#0A1628]">₹{Number(p.unit_price).toLocaleString('en-IN')}</span>
+                          {p.mrp != null && p.mrp > p.unit_price ? (
+                            <span className="text-[10px] text-[#718096] line-through">MRP ₹{Number(p.mrp).toLocaleString('en-IN')}</span>
+                          ) : null}
+                          {p.updated_at && (
+                            <span className="text-[10px] text-[#A0AEC0]">
+                              {new Date(p.updated_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="inline-block px-2 py-0.5 text-[10px] font-semibold text-[#718096] bg-[#F8F9FA] border border-[#E2E8F0] rounded-full">Quote only</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button
