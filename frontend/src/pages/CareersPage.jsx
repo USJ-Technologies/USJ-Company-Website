@@ -537,6 +537,7 @@ export default function CareersPage() {
         'title': job.title,
         'description': job.description,
         ...(job.created_at ? { 'datePosted': job.created_at.split('T')[0] } : {}),
+        ...(job.deadline ? { 'validThrough': job.deadline.split('T')[0] } : {}),
         'hiringOrganization': {
           '@type': 'Organization',
           'name': 'USJ Technologies (OPC) Pvt Ltd',
@@ -607,7 +608,7 @@ export default function CareersPage() {
               subtitle="A place where your work matters, your ideas are heard, and your growth is our priority."
             />
             <img
-              src="/Generated/careers/cul.png"
+              src="/Generated/careers/cul.webp"
               alt="USJ Technologies team collaborating in the office"
               loading="lazy"
               className="w-full h-64 object-cover rounded-2xl mb-10"

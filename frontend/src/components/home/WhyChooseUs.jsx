@@ -51,7 +51,7 @@ export default function WhyChooseUs() {
             </h2>
           </div>
           <img
-            src="/Generated/home-page/why-choose-us.png"
+            src="/Generated/home-page/why-choose-us.webp"
             alt="Carefully packing a networking product for delivery"
             loading="lazy"
             className="hidden md:block w-64 h-40 rounded-2xl object-cover flex-shrink-0"

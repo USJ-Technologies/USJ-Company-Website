@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
 import useAuthStore from './store/authStore';
 import useCartStore from './store/cartStore';
 import { getCartFromDb } from './lib/queries';

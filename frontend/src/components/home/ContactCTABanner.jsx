@@ -12,7 +12,7 @@ export default function ContactCTABanner() {
     >
       {/* Fiber optic background photo */}
       <img
-        src="/Generated/home-page/contact-cta-banner.png"
+        src="/Generated/home-page/contact-cta-banner.webp"
         alt=""
         loading="lazy"
         className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none"

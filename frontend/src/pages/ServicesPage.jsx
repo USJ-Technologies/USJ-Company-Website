@@ -12,7 +12,7 @@ const services = [
     title: 'Government & Defence Solutions',
     color: '#EBF4FF',
     iconBg: '#0A1628',
-    image: '/Generated/services-page/govt-def-corridor.png',
+    image: '/Generated/services-page/govt-def-corridor.webp',
     features: [
       'GeM-registered procurement services',
       'Defence electronics supply chain',
@@ -33,7 +33,7 @@ const services = [
     title: 'Technology Products & Electronics',
     color: '#E8D5F5',
     iconBg: '#4A235A',
-    image: '/Generated/services-page/IT-infra-net.png',
+    image: '/Generated/services-page/IT-infra-net.webp',
     features: [
       'HD surveillance cameras & NVR systems',
       'Structured cabling & networking',
@@ -54,7 +54,7 @@ const services = [
     title: 'GeM Tender Management',
     color: '#D4EDDA',
     iconBg: '#155724',
-    image: '/Generated/services-page/tender-bt2.png',
+    image: '/Generated/services-page/tender-bt2.webp',
     features: [
       'GeM seller registration assistance',
       'Tender identification & bid preparation',
