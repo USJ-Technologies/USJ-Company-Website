@@ -2,7 +2,7 @@ import { Helmet } from 'react-helmet-async';
 
 const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://usjtechnologies.com';
 const SITE_NAME = 'USJ Technologies (OPC) Pvt Ltd';
-const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.jpg`;
+const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.jpeg`;
 
 const BASE_KEYWORDS =
   'IT company Dehradun, technology company Uttarakhand, electronics supplier Dehradun, GeM registered seller, government IT procurement Uttarakhand, networking products Dehradun, B2B electronics North India, USJ Technologies';
