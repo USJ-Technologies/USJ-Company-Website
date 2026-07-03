@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import Skeleton from '../../components/ui/Skeleton';
 import {
   Search, Package, ExternalLink, Star, Plus, Edit2, Trash2, X,
-  Save, Upload, Link as LinkIcon, ChevronDown, CheckCircle, Image,
+  Save, Upload, ChevronDown, CheckCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
@@ -81,7 +81,7 @@ const removeBtnCls = 'p-1 text-[#718096] hover:text-red-500 transition-colors fl
 
 const emptyForm = {
   name: '', model: '', brand_name: 'ENTER', category_name: '', description: '',
-  slug: '', key_features: [], specifications: {}, in_box: [],
+  slug: '', key_features: [], specifications: {}, in_box: [], faqs: [],
   primary_image_url: '', additionalImages: [], product_url: '',
   is_active: true, is_featured: false, is_b2b: true, unit_price: '', mrp: '',
 };
@@ -103,6 +103,11 @@ function toFormData(p) {
     primary_image_url: p.primary_image_url || '',
     additionalImages,
     product_url: p.product_url || '',
+    faqs: Array.isArray(p.faqs)
+      ? p.faqs
+          .filter((item) => item && typeof item.question === 'string' && item.question.trim() && typeof item.answer === 'string' && item.answer.trim())
+          .map((item) => ({ question: item.question.trim(), answer: item.answer.trim() }))
+      : [],
     is_active: p.is_active ?? true,
     is_featured: p.is_featured ?? false,
     is_b2b: p.is_b2b ?? true,
@@ -233,6 +238,8 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
   const [newSpecKey, setNewSpecKey] = useState('');
   const [newSpecVal, setNewSpecVal] = useState('');
   const [newBoxItem, setNewBoxItem] = useState('');
+  const [newFaqQuestion, setNewFaqQuestion] = useState('');
+  const [newFaqAnswer, setNewFaqAnswer] = useState('');
   const [newImgUrl, setNewImgUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef(null);
@@ -272,6 +279,18 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
     setNewBoxItem('');
   };
   const removeBoxItem = (i) => set('in_box', form.in_box.filter((_, idx) => idx !== i));
+
+  // FAQs
+  const addFaq = () => {
+    const question = newFaqQuestion.trim();
+    const answer = newFaqAnswer.trim();
+    if (!question || !answer) return;
+    set('faqs', [...form.faqs, { question, answer }]);
+    setNewFaqQuestion('');
+    setNewFaqAnswer('');
+  };
+  const removeFaq = (i) => set('faqs', form.faqs.filter((_, idx) => idx !== i));
+  const updateFaq = (index, field, value) => set('faqs', form.faqs.map((faq, idx) => idx === index ? { ...faq, [field]: value } : faq));
 
   // Additional images
   const addImgUrl = () => {
@@ -490,6 +509,73 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
                 placeholder="e.g. Dual-band AC2100 with MU-MIMO technology"
               />
               <button onClick={addFeature} className={addBtnCls}><Plus size={14} /></button>
+            </div>
+          </div>
+
+          {/* ── FAQs ── */}
+          <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
+            <SectionHeader title="Product FAQs" />
+            <div className="space-y-3 mb-4">
+              {form.faqs.map((faq, i) => (
+                <div key={i} className="space-y-2 bg-[#F8F9FA] p-4 rounded-[10px] border border-[#E2E8F0]">
+                  <div className="flex items-start gap-2">
+                    <div className="flex-1">
+                      <label className="block text-[11px] font-semibold text-[#0A1628] mb-1">Question</label>
+                      <input
+                        value={faq.question}
+                        onChange={e => updateFaq(i, 'question', e.target.value)}
+                        className={inputCls}
+                        placeholder="Enter the FAQ question"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeFaq(i)}
+                      className="text-[#718096] hover:text-red-500 transition-colors mt-6"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#0A1628] mb-1">Answer</label>
+                    <textarea
+                      value={faq.answer}
+                      onChange={e => updateFaq(i, 'answer', e.target.value)}
+                      className={`${inputCls} resize-none`}
+                      rows={3}
+                      placeholder="Enter the FAQ answer"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] items-end">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#0A1628] mb-1">New Question</label>
+                <input
+                  value={newFaqQuestion}
+                  onChange={e => setNewFaqQuestion(e.target.value)}
+                  className={inputCls}
+                  placeholder="FAQ question"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-[#0A1628] mb-1">New Answer</label>
+                <textarea
+                  value={newFaqAnswer}
+                  onChange={e => setNewFaqAnswer(e.target.value)}
+                  className={`${inputCls} resize-none`}
+                  rows={3}
+                  placeholder="FAQ answer"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={addFaq}
+                className={`${addBtnCls} self-stretch mt-6`}
+              >
+                <Plus size={14} /> Add FAQ
+              </button>
             </div>
           </div>
 
@@ -732,6 +818,9 @@ const ProductsAdminPage = () => {
       key_features: formData.key_features.filter(Boolean),
       specifications: formData.specifications,
       in_box: formData.in_box.filter(Boolean),
+      faqs: (formData.faqs || [])
+        .filter((faq) => faq && faq.question?.trim() && faq.answer?.trim())
+        .map((faq) => ({ question: faq.question.trim(), answer: faq.answer.trim() })),
       primary_image_url: formData.primary_image_url?.trim() || null,
       product_url: formData.product_url?.trim() || null,
       is_active: formData.is_active,

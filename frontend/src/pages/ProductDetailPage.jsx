@@ -32,6 +32,7 @@ export default function ProductDetailPage() {
   const [activeImage, setActiveImage] = useState(null);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
   const addItem = useCartStore(s => s.addItem);
   const { user, isAuthenticated } = useAuthStore();
@@ -110,7 +111,6 @@ export default function ProductDetailPage() {
     || `Buy ${product.name}${product.model ? ` (${product.model})` : ''} from USJ Technologies – GeM registered ${product.brand_name || ''} electronics supplier in Dehradun. B2B pricing, pan-India delivery, government procurement supported.`;
 
   const productStructuredData = {
-    '@context': 'https://schema.org',
     '@type': 'Product',
     'name': product.name,
     'description': productDescription,
@@ -141,6 +141,54 @@ export default function ProductDetailPage() {
     },
   };
 
+  const productFaqs = Array.isArray(product.faqs)
+    ? product.faqs
+        .filter((faq) => faq && typeof faq.question === 'string' && faq.question.trim() && typeof faq.answer === 'string' && faq.answer.trim())
+        .map((faq) => ({ question: faq.question.trim(), answer: faq.answer.trim() }))
+    : [];
+
+  const genericFaqs = [
+    {
+      question: `Is ${product.name} available for purchase on GeM portal?`,
+      answer: `Yes, ${product.name} is available through our GeM-registered supply channel for government and bulk procurement.`,
+    },
+    {
+      question: `Do you offer bulk or B2B pricing for ${product.name}?`,
+      answer: `Yes, we provide competitive bulk and B2B pricing for ${product.name}, especially for government, enterprise, and institutional orders.`,
+    },
+    {
+      question: `What is the warranty on ${product.name}?`,
+      answer: `Warranty depends on the manufacturer and model, but USJ Technologies supports standard manufacturer warranty and post-sales assistance for ${product.name}.`,
+    },
+    {
+      question: `Do you deliver ${product.name} across India?`,
+      answer: `Yes, we deliver ${product.name} across India with GST billing, secure packing, and trusted logistics partners.`,
+    },
+    {
+      question: `Can I get ${product.name} installed or configured by your team?`,
+      answer: `Yes, installation and configuration support can be arranged for ${product.name} through our B2B service offering.`,
+    },
+  ];
+
+  const faqItems = [...productFaqs, ...genericFaqs];
+
+  const faqPageSchema = {
+    '@type': 'FAQPage',
+    'mainEntity': faqItems.map(({ question, answer }) => ({
+      '@type': 'Question',
+      'name': question,
+      'acceptedAnswer': {
+        '@type': 'Answer',
+        'text': answer,
+      },
+    })),
+  };
+
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [productStructuredData, faqPageSchema],
+  };
+
   return (
     <>
       <SEOHead
@@ -161,7 +209,7 @@ export default function ProductDetailPage() {
         canonical={`/product/${product.slug}`}
         ogImage={allImages[0] || undefined}
         ogType="product"
-        structuredData={productStructuredData}
+        structuredData={structuredData}
       />
     <div className="bg-[#F8F9FA] min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
@@ -367,6 +415,39 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Product FAQs */}
+        {faqItems.length > 0 && (
+          <div className="mt-5 bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-[#E2E8F0]">
+              <h2 className="text-lg font-bold text-[#0A1628]">Frequently Asked Questions</h2>
+              <p className="text-sm text-[#718096] mt-1">Answers to common questions about {product.name}.</p>
+            </div>
+            <div className="divide-y divide-[#E2E8F0]">
+              {faqItems.map((faq, index) => {
+                const open = openFaqIndex === index;
+                return (
+                  <div key={index}>
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaqIndex(open ? null : index)}
+                      aria-expanded={open}
+                      className="w-full flex items-center justify-between px-6 py-4 text-left text-sm font-semibold text-[#0A1628] hover:bg-[#F8F9FA] transition-colors"
+                    >
+                      <span>{faq.question}</span>
+                      <ChevronRight className={`transition-transform ${open ? 'rotate-90' : ''}`} size={18} />
+                    </button>
+                    {open && (
+                      <div className="px-6 pb-5 text-sm leading-relaxed text-[#4A5568]">
+                        {faq.answer}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Tabs: Key Features / Specifications / In The Box */}
         {(hasKeyFeatures || hasSpecs || hasInBox) && (
