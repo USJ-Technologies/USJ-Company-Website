@@ -16,9 +16,9 @@ const values = [
 ];
 
 const team = [
-  { name: 'Ujjwal Singh Jeena', role: 'Founder & CEO', initials: 'USJ', bio: 'Visionary entrepreneur with expertise in government procurement, technology integration, and startup building.', image_url: '/Generated/about/team-headshot.png' },
-  { name: 'Technology Lead', role: 'CTO & Head of Products', initials: 'TL', bio: 'Engineering excellence with deep expertise in electronics, networking systems, and defence-grade technologies.', image_url: '/Generated/about/team-headshot.png' },
-  { name: 'Operations Lead', role: 'Head of Operations & GeM', initials: 'OL', bio: 'Specialist in government e-marketplace, tender management, and compliance frameworks across India.', image_url: '/Generated/about/team-headshot.png' },
+  { name: 'Ujjwal Singh Jeena', role: 'Founder & CEO', initials: 'USJ', bio: 'Visionary entrepreneur with expertise in government procurement, technology integration, and startup building.', image_url: '/Generated/about/team-headshot.webp' },
+  { name: 'Technology Lead', role: 'CTO & Head of Products', initials: 'TL', bio: 'Engineering excellence with deep expertise in electronics, networking systems, and defence-grade technologies.', image_url: '/Generated/about/team-headshot.webp' },
+  { name: 'Operations Lead', role: 'Head of Operations & GeM', initials: 'OL', bio: 'Specialist in government e-marketplace, tender management, and compliance frameworks across India.', image_url: '/Generated/about/team-headshot.webp' },
 ];
 
 const milestones = [
@@ -108,8 +108,9 @@ export default function AboutPage() {
                 subtitle=""
               />
               <img
-                src="/Generated/about/story-office-cul.png"
+                src="/Generated/about/story-office-cul.webp"
                 alt="USJ Technologies team working in the office"
+                loading="lazy"
                 className="w-full h-56 object-cover rounded-2xl mb-6"
                 style={{ boxShadow: '0 16px 40px rgba(10,22,40,0.15)' }}
               />
@@ -203,6 +204,7 @@ export default function AboutPage() {
                     <img
                       src={member.image_url}
                       alt={member.name}
+                      loading="lazy"
                       className="w-20 h-20 rounded-full object-cover mx-auto mb-4 border-2 border-[#E2E8F0]"
                     />
                   ) : (

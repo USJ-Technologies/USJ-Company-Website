@@ -10,7 +10,7 @@ const services = [
       'End-to-end technology supply for government departments, defence establishments, and paramilitary forces — GeM registered, security-compliant, and trusted across Uttarakhand and beyond.',
     link: ROUTES.SERVICES,
     tag: 'GeM · B2B',
-    image: '/Generated/home-page/what-we-do-b.png',
+    image: '/Generated/home-page/what-we-do-b.webp',
   },
   {
     number: '02',
@@ -19,7 +19,7 @@ const services = [
       'Surveillance systems, networking gear, power solutions, and IT peripherals from leading brands — sourced from authorised distributors with GST invoice and full after-sales support.',
     link: ROUTES.SHOP,
     tag: '700+ Products',
-    image: '/Generated/home-page/what-we-do-a.png',
+    image: '/Generated/home-page/what-we-do-a.webp',
   },
   {
     number: '03',
@@ -28,7 +28,7 @@ const services = [
       'Expert navigation of the Government e-Marketplace with successful tender bids, procurement facilitation, end-to-end installation, and compliance management for institutional buyers.',
     link: ROUTES.PROJECTS,
     tag: '50+ Projects',
-    image: '/Generated/home-page/what-we-do-c.png',
+    image: '/Generated/home-page/what-we-do-c.webp',
   },
 ];
 
@@ -87,6 +87,7 @@ export default function WhatWeDo() {
                   <img
                     src={image}
                     alt={title}
+                    loading="lazy"
                     className="hidden sm:block w-24 h-24 rounded-xl object-cover flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">

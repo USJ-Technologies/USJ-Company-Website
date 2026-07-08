@@ -433,7 +433,7 @@ export default function QuoteRequestPage() {
                     <div key={p.id} className="flex items-center gap-3">
                       <div className="w-12 h-12 flex-shrink-0 bg-[#F8F9FA] rounded-[6px] border border-[#E2E8F0] flex items-center justify-center overflow-hidden">
                         {p.primary_image_url ? (
-                          <img src={p.primary_image_url} alt={p.name} className="w-full h-full object-contain p-0.5" />
+                          <img src={p.primary_image_url} alt={p.name} loading="lazy" className="w-full h-full object-contain p-0.5" />
                         ) : (
                           <Package size={20} className="text-gray-300" />
                         )}

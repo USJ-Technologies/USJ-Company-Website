@@ -43,7 +43,7 @@ export default function VenturesStrip() {
             return (
               <Card key={venture.id} className="overflow-hidden flex flex-col" hover>
                 {venture.image && (
-                  <img src={venture.image} alt={venture.name} className="w-full h-36 object-cover" />
+                  <img src={venture.image} alt={venture.name} loading="lazy" className="w-full h-36 object-cover" />
                 )}
                 <div className="p-6 flex flex-col flex-1">
                 <div

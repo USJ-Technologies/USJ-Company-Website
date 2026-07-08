@@ -103,7 +103,7 @@ export default function HeroSection() {
         <div className="lg:hidden w-full">
           <div className="rounded-2xl overflow-hidden mb-4" style={{ boxShadow: '0 20px 50px rgba(10,22,40,0.25)' }}>
             <img
-              src="/Generated/home-page/hero.png"
+              src="/Generated/home-page/hero.webp"
               alt="USJ Technologies engineer working with networking hardware"
               className="w-full h-56 object-cover"
             />
@@ -131,7 +131,7 @@ export default function HeroSection() {
             <div className="rounded-2xl overflow-hidden relative -mb-10 z-0"
               style={{ boxShadow: '0 24px 60px rgba(10,22,40,0.35)' }}>
               <img
-                src="/Generated/home-page/hero.png"
+                src="/Generated/home-page/hero.webp"
                 alt="USJ Technologies engineer working with networking hardware in a warehouse"
                 className="w-full h-64 object-cover"
               />

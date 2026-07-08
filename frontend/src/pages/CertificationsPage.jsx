@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Lock } from 'lucide-react';
 import SEOHead from '../components/seo/SEOHead';
 import SectionHeader from '../components/ui/SectionHeader';
@@ -57,6 +57,29 @@ export default function CertificationsPage() {
     });
   }, []);
 
+  const certificationsStructuredData = useMemo(() => ({
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    'name': 'USJ Technologies Certifications & Accreditations',
+    'description': 'Government and industry certifications held by USJ Technologies (OPC) Pvt Ltd — GeM registration, Startup India, MSME Udyam, and more.',
+    'url': 'https://usjtechnologies.com/certifications',
+    'itemListElement': certs.map((cert, index) => ({
+      '@type': 'ListItem',
+      'position': index + 1,
+      'item': {
+        '@type': 'EducationalOccupationalCredential',
+        'name': cert.name,
+        'description': cert.description,
+        'credentialCategory': 'Certification',
+        'recognizedBy': {
+          '@type': 'Organization',
+          'name': cert.issuing_body ?? cert.issuingBody,
+        },
+        ...(cert.cert_id ?? cert.certId ? { 'identifier': cert.cert_id ?? cert.certId } : {}),
+      },
+    })),
+  }), [certs]);
+
   return (
     <>
       <SEOHead
@@ -64,6 +87,7 @@ export default function CertificationsPage() {
         description="USJ Technologies holds GeM registration, Startup India certification, and multiple government accreditations. Trusted, compliant IT company in Dehradun, Uttarakhand for government and defence electronics procurement."
         keywords="GeM registration Uttarakhand, Startup India certified Dehradun, government accreditation IT company, MSME certified Uttarakhand, certifications USJ Technologies, compliant electronics supplier India, defence supplier certification"
         canonical="/certifications"
+        structuredData={certificationsStructuredData}
       />
       <div>
       {/* Hero */}
