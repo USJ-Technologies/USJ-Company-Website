@@ -21,6 +21,8 @@ import CareersPage from './pages/CareersPage';
 import ContactPage from './pages/ContactPage';
 import ShopPage from './pages/ShopPage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import BlogListPage from './pages/BlogListPage';
+import BlogPostPage from './pages/BlogPostPage';
 import CartPage from './pages/CartPage';
 import QuoteRequestPage from './pages/QuoteRequestPage';
 import LoginPage from './pages/LoginPage';
@@ -41,6 +43,7 @@ import CertificationsAdminPage from './pages/admin/CertificationsAdminPage';
 import TeamAdminPage from './pages/admin/TeamAdminPage';
 import AccessControlAdminPage from './pages/admin/AccessControlAdminPage';
 import CareersAdminPage from './pages/admin/CareersAdminPage';
+import BlogAdminPage from './pages/admin/BlogAdminPage';
 
 const App = () => {
   const { init, isAuthenticated } = useAuthStore();
@@ -85,6 +88,8 @@ useEffect(() => {
         <Route path="/careers" element={<CareersPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/shop" element={<ShopPage />} />
+        <Route path="/blog" element={<BlogListPage />} />
+        <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/product/:slug" element={<ProductDetailPage />} />
         <Route path="/shop/product/:slug" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
@@ -110,6 +115,7 @@ useEffect(() => {
         <Route path="team" element={<TeamAdminPage />} />
         <Route path="access-control" element={<AccessControlAdminPage />} />
         <Route path="careers" element={<CareersAdminPage />} />
+        <Route path="blog" element={<BlogAdminPage />} />
       </Route>
     </Routes>
   );
