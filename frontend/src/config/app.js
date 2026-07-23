@@ -74,6 +74,7 @@ export const ROUTES = {
   CAREERS: '/careers',
   CONTACT: '/contact',
   SHOP: '/shop',
+  BLOG: '/blog',
   PRODUCT_DETAIL: (slug) => `/product/${slug}`,
   CART: '/cart',
   CHECKOUT: '/checkout',
@@ -92,4 +93,5 @@ export const ROUTES = {
   ADMIN_TEAM: '/admin/team',
   ADMIN_ACCESS_CONTROL: '/admin/access-control',
   ADMIN_CAREERS: '/admin/careers',
+  ADMIN_BLOG: '/admin/blog',
 };
