@@ -44,7 +44,6 @@ const STATIC_PAGES = [
   { loc: '/services', changefreq: 'monthly', priority: '0.9' },
   { loc: '/contact', changefreq: 'monthly', priority: '0.9' },
   { loc: '/shop', changefreq: 'daily', priority: '0.95' },
-  { loc: '/blog', changefreq: 'weekly', priority: '0.85' },
   { loc: '/shop?brand=ENTER', changefreq: 'weekly', priority: '0.8' },
   { loc: '/shop?brand=TENDA', changefreq: 'weekly', priority: '0.8' },
   { loc: '/shop?brand=ZOOOK', changefreq: 'weekly', priority: '0.8' },
@@ -94,25 +93,9 @@ async function fetchProducts() {
   return data ?? [];
 }
 
-async function fetchBlogPosts() {
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select('slug, updated_at, created_at, published_at')
-    .eq('published', true)
-    .order('published_at', { ascending: false });
-
-  if (error) {
-    console.warn('Blog query skipped:', error.message);
-    return [];
-  }
-
-  return data ?? [];
-}
-
 async function main() {
   const today = formatDate(new Date());
   const products = await fetchProducts();
-  const blogPosts = await fetchBlogPosts();
 
   const staticEntries = STATIC_PAGES.map((page) =>
     urlEntry({
@@ -133,16 +116,6 @@ async function main() {
     });
   });
 
-  const blogEntries = blogPosts.map((post) => {
-    const lastmod = post.updated_at || post.published_at || post.created_at;
-    return urlEntry({
-      loc: `${SITE_URL}/blog/${post.slug}`,
-      lastmod: lastmod ? formatDate(new Date(lastmod)) : today,
-      changefreq: 'weekly',
-      priority: '0.75',
-    });
-  });
-
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -154,14 +127,11 @@ ${staticEntries.join('\n\n')}
   <!-- Product pages (generated from Supabase) -->
 ${productEntries.join('\n')}
 
-  <!-- Blog pages (generated from Supabase) -->
-${blogEntries.join('\n')}
-
 </urlset>
 `;
 
   writeFileSync(SITEMAP_PATH, xml, 'utf8');
-  console.log(`Wrote ${STATIC_PAGES.length} static + ${products.length} product + ${blogPosts.length} blog URLs to public/sitemap.xml`);
+  console.log(`Wrote ${STATIC_PAGES.length} static + ${products.length} product URLs to public/sitemap.xml`);
 }
 
 main();

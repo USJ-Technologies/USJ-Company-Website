@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, Package, MessageSquare,
-  Building2, Award, Menu, X, LogOut, ChevronRight, Users, Shield, Briefcase, BookOpen,
+  Building2, Award, Menu, X, LogOut, ChevronRight, Users, Shield, Briefcase,
 } from 'lucide-react';
 import { ROUTES } from '../../config/app';
 import useAuthStore from '../../store/authStore';
