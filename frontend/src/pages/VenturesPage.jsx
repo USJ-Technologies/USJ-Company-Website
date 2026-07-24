@@ -9,7 +9,7 @@ import { APP_CONFIG, ROUTES } from '../config/app';
 
 const iconMap = { Scale, Compass, Mountain };
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://usjtechnologies.com';
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://www.usjtechnologies.com';
 
 export default function VenturesPage() {
   const { ventures } = APP_CONFIG;

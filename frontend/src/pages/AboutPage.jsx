@@ -61,10 +61,10 @@ export default function AboutPage() {
         structuredData={{
           '@context': 'https://schema.org',
           '@type': 'AboutPage',
-          'url': 'https://usjtechnologies.com/about',
+          'url': 'https://www.usjtechnologies.com/about',
           'name': 'About USJ Technologies – IT Company Dehradun',
           'description': 'USJ Technologies is a Dehradun-based IT company founded by Ujjwal Singh Jeena. GeM registered, Startup India certified electronics supplier serving government, defence, and commercial clients across India.',
-          'mainEntity': { '@id': 'https://usjtechnologies.com/#organization' },
+          'mainEntity': { '@id': 'https://www.usjtechnologies.com/#organization' },
         }}
       />
       <div>

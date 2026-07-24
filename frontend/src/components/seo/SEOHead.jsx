@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://usjtechnologies.com';
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://www.usjtechnologies.com';
 const SITE_NAME = 'USJ Technologies (OPC) Pvt Ltd';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.jpeg`;
 

@@ -90,7 +90,7 @@ export default function ServicesPage() {
           '@context': 'https://schema.org',
           '@type': 'Service',
           'name': 'Government & Defence IT Solutions',
-          'provider': { '@id': 'https://usjtechnologies.com/#organization' },
+          'provider': { '@id': 'https://www.usjtechnologies.com/#organization' },
           'description': 'GeM procurement, network infrastructure, CCTV & security systems, defence electronics supply, and government IT services across Uttarakhand and India.',
           'areaServed': [
             { '@type': 'City', 'name': 'Dehradun' },
@@ -98,7 +98,7 @@ export default function ServicesPage() {
             { '@type': 'Country', 'name': 'India' },
           ],
           'serviceType': ['Government IT Procurement', 'GeM Services', 'Network Deployment', 'Surveillance Systems', 'Defence Electronics Supply'],
-          'url': 'https://usjtechnologies.com/services',
+          'url': 'https://www.usjtechnologies.com/services',
         }}
       />
       <div>

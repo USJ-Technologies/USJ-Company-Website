@@ -62,7 +62,7 @@ export default function CertificationsPage() {
     '@type': 'ItemList',
     'name': 'USJ Technologies Certifications & Accreditations',
     'description': 'Government and industry certifications held by USJ Technologies (OPC) Pvt Ltd — GeM registration, Startup India, MSME Udyam, and more.',
-    'url': 'https://usjtechnologies.com/certifications',
+    'url': 'https://www.usjtechnologies.com/certifications',
     'itemListElement': certs.map((cert, index) => ({
       '@type': 'ListItem',
       'position': index + 1,

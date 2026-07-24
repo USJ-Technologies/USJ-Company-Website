@@ -119,9 +119,9 @@ export default function ProjectsPage() {
           '@type': 'CollectionPage',
           'name': 'USJ Technologies Projects Portfolio',
           'description': 'Government, defence, and commercial technology projects delivered by USJ Technologies across India — surveillance, networking, GeM procurement, and IT infrastructure.',
-          'url': 'https://usjtechnologies.com/projects',
-          'isPartOf': { '@id': 'https://usjtechnologies.com/#website' },
-          'about': { '@id': 'https://usjtechnologies.com/#organization' },
+          'url': 'https://www.usjtechnologies.com/projects',
+          'isPartOf': { '@id': 'https://www.usjtechnologies.com/#website' },
+          'about': { '@id': 'https://www.usjtechnologies.com/#organization' },
         }}
       />
     <div>

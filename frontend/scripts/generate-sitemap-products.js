@@ -27,7 +27,7 @@ function loadEnvFile(path) {
 
 loadEnvFile(ENV_PATH);
 
-const SITE_URL = (process.env.VITE_SITE_URL || 'https://usjtechnologies.com').replace(/\/$/, '');
+const SITE_URL = (process.env.VITE_SITE_URL || 'https://www.usjtechnologies.com').replace(/\/$/, '');
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
