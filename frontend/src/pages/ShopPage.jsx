@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Package, SlidersHorizontal, X, Sparkles } from 'lucide-react';
+import { Package, SlidersHorizontal, X, Sparkles, Search } from 'lucide-react';
 import SEOHead from '../components/seo/SEOHead';
 import ProductCard from '../components/shop/ProductCard';
 import { SkeletonProductCard } from '../components/ui/Skeleton';
@@ -49,19 +49,6 @@ function RecommendedStrip({ userId }) {
 function FilterPanel({ filters, brands, visibleCategories, activeFilterCount, onFilter, onClear }) {
   return (
     <div className="space-y-6">
-      {/* Search */}
-      <div>
-        <label className="block text-xs font-semibold text-[#0A1628] uppercase tracking-wider mb-2">
-          Search
-        </label>
-        <input
-          type="text"
-          placeholder="Product name..."
-          value={filters.search}
-          onChange={(e) => onFilter('search', e.target.value)}
-          className="w-full px-3 py-2 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C] bg-white"
-        />
-      </div>
 
       {/* Brand */}
       <div>
@@ -147,6 +134,8 @@ export default function ShopPage() {
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const mobileSearchRef = useRef(null);
 
   const { user, isAuthenticated } = useAuthStore();
   const hasActiveFilters = Object.values(filters).some(Boolean);
@@ -209,7 +198,7 @@ export default function ShopPage() {
           '@type': 'ItemList',
           'name': 'IT & Electronics Products – USJ Technologies',
           'description': 'ENTER, TENDA, and ZOOOK brand networking and electronics products available for B2B purchase.',
-          'url': 'https://usjtechnologies.com/shop',
+          'url': 'https://www.usjtechnologies.com/shop',
           'itemListElement': [
             { '@type': 'ListItem', 'position': 1, 'name': 'ENTER Networking Products' },
             { '@type': 'ListItem', 'position': 2, 'name': 'TENDA WiFi & Networking' },
@@ -228,22 +217,64 @@ export default function ShopPage() {
       </section>
 
       {/* Mobile filter toggle */}
-      <div className="lg:hidden sticky top-0 z-20 bg-white border-b border-[#E2E8F0] px-4 py-3 flex items-center justify-between">
-        <p className="text-sm text-[#718096]">
-          {isLoading ? 'Loading...' : `${total} products`}
-          {activeFilterCount > 0 && (
-            <span className="ml-2 px-1.5 py-0.5 text-xs bg-[#0A1628] text-white rounded-full">
-              {activeFilterCount}
-            </span>
-          )}
-        </p>
-        <button
-          onClick={() => setShowMobileFilters(true)}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[#E2E8F0] rounded-[6px] text-[#0A1628]"
-        >
-          <SlidersHorizontal size={14} />
-          Filters
-        </button>
+      <div className="lg:hidden sticky top-0 z-20 bg-white border-b border-[#E2E8F0]">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <p className="text-sm text-[#718096]">
+            {isLoading ? 'Loading...' : `${total} products`}
+            {activeFilterCount > 0 && (
+              <span className="ml-2 px-1.5 py-0.5 text-xs bg-[#0A1628] text-white rounded-full">
+                {activeFilterCount}
+              </span>
+            )}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setShowMobileSearch((v) => !v);
+                setTimeout(() => mobileSearchRef.current?.focus(), 50);
+              }}
+              className={`flex items-center justify-center w-9 h-9 border rounded-[6px] transition-colors ${
+                showMobileSearch || filters.search
+                  ? 'border-[#C9A84C] text-[#C9A84C]'
+                  : 'border-[#E2E8F0] text-[#0A1628]'
+              }`}
+              aria-label="Search products"
+            >
+              <Search size={16} />
+            </button>
+            <button
+              onClick={() => setShowMobileFilters(true)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[#E2E8F0] rounded-[6px] text-[#0A1628]"
+            >
+              <SlidersHorizontal size={14} />
+              Filters
+            </button>
+          </div>
+        </div>
+
+        {/* Expandable mobile search bar */}
+        {showMobileSearch && (
+          <div className="px-4 pb-3 flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#718096] pointer-events-none" />
+              <input
+                ref={mobileSearchRef}
+                type="text"
+                placeholder="Search products..."
+                value={filters.search}
+                onChange={(e) => handleFilter('search', e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C] bg-white"
+              />
+            </div>
+            <button
+              onClick={() => setShowMobileSearch(false)}
+              className="flex items-center justify-center w-9 h-9 text-[#718096] hover:text-[#0A1628] transition-colors"
+              aria-label="Close search"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Mobile filter drawer */}
@@ -280,14 +311,26 @@ export default function ShopPage() {
                 <RecommendedStrip userId={user?.id} />
               )}
 
-              <div className="flex items-center justify-between mb-5">
-                <p className="text-sm text-[#718096]">
-                  {isLoading ? (
-                    <span className="inline-block w-24 h-4 bg-gray-200 rounded animate-pulse" />
-                  ) : (
-                    `${total} product${total !== 1 ? 's' : ''} found`
-                  )}
-                </p>
+              <div className="mb-5">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm text-[#718096]">
+                    {isLoading ? (
+                      <span className="inline-block w-24 h-4 bg-gray-200 rounded animate-pulse" />
+                    ) : (
+                      `${total} product${total !== 1 ? 's' : ''} found`
+                    )}
+                  </p>
+                </div>
+                <div className="relative hidden lg:block">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#718096] pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={filters.search}
+                    onChange={(e) => handleFilter('search', e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C] bg-white"
+                  />
+                </div>
               </div>
 
               {isLoading ? (

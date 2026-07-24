@@ -29,7 +29,7 @@ const EMPLOYMENT_TYPE_MAP = {
   remote: 'TELECOMMUTE',
 };
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://usjtechnologies.com';
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://www.usjtechnologies.com';
 
 const TYPE_COLOR = {
   full_time:  { bg: '#EBF4FF', text: '#1A3A5C' },

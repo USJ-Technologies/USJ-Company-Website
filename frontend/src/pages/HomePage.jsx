@@ -11,19 +11,19 @@ import ContactCTABanner from '../components/home/ContactCTABanner';
 const homeStructuredData = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
-  '@id': 'https://usjtechnologies.com/#webpage',
-  'url': 'https://usjtechnologies.com/',
+  '@id': 'https://www.usjtechnologies.com/#webpage',
+  'url': 'https://www.usjtechnologies.com/',
   'name': 'USJ Technologies – IT Company Dehradun | GeM Electronics Supplier Uttarakhand',
   'description': 'USJ Technologies is a Dehradun-based IT company and GeM registered electronics supplier. We supply ENTER, TENDA, and ZOOOK products across India and provide government & defence technology solutions.',
-  'isPartOf': { '@id': 'https://usjtechnologies.com/#website' },
-  'about': { '@id': 'https://usjtechnologies.com/#organization' },
+  'isPartOf': { '@id': 'https://www.usjtechnologies.com/#website' },
+  'about': { '@id': 'https://www.usjtechnologies.com/#organization' },
   'speakable': {
     '@type': 'SpeakableSpecification',
     'cssSelector': ['h1', 'h2'],
   },
   'breadcrumb': {
     '@type': 'BreadcrumbList',
-    'itemListElement': [{ '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': 'https://usjtechnologies.com/' }],
+    'itemListElement': [{ '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': 'https://www.usjtechnologies.com/' }],
   },
 };
 

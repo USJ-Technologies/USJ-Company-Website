@@ -65,10 +65,10 @@ export default function ContactPage() {
         structuredData={{
           '@context': 'https://schema.org',
           '@type': 'ContactPage',
-          'url': 'https://usjtechnologies.com/contact',
+          'url': 'https://www.usjtechnologies.com/contact',
           'name': 'Contact USJ Technologies',
           'description': 'Contact USJ Technologies for quotes, GeM orders, tenders, and partnerships.',
-          'mainEntity': { '@id': 'https://usjtechnologies.com/#organization' },
+          'mainEntity': { '@id': 'https://www.usjtechnologies.com/#organization' },
         }}
       />
       <div>

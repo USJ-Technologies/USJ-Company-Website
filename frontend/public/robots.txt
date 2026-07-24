@@ -22,4 +22,4 @@ Allow: /ventures
 Allow: /careers
 Allow: /projects
 
-Sitemap: https://usjtechnologies.com/sitemap.xml
+Sitemap: https://www.usjtechnologies.com/sitemap.xml

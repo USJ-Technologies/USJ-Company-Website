@@ -13,7 +13,7 @@ import { APP_CONFIG, ROUTES } from '../config/app';
 import SEOHead from '../components/seo/SEOHead';
 import { isSafeExternalUrl } from '../lib/url';
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://usjtechnologies.com';
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://www.usjtechnologies.com';
 
 const BRAND_COLOR = { ENTER: '#1A56DB', TENDA: '#2D7D46', ZOOOK: '#C9A84C' };
 
