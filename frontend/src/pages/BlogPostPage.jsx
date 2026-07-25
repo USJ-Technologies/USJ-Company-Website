@@ -140,7 +140,7 @@ export default function BlogPostPage() {
       />
 
       <div className="bg-[#F8F9FA] min-h-screen py-8 md:py-12">
-        <div className="container-max max-w-4xl">
+        <div className="container-max max-w-6xl">
           <nav className="mb-6 flex items-center gap-2 text-sm text-[#718096]">
             <Link to="/" className="hover:text-[#0A1628]">Home</Link>
             <span>/</span>
