@@ -13,6 +13,7 @@ const ALL_NAV_ITEMS = [
   { label: 'Products',       to: ROUTES.ADMIN_PRODUCTS,       icon: Package,         roles: ['admin', 'manager'] },
   { label: 'Certifications', to: ROUTES.ADMIN_CERTIFICATIONS, icon: Award,           roles: ['admin', 'manager'] },
   { label: 'Careers',        to: ROUTES.ADMIN_CAREERS,        icon: Briefcase,       roles: ['admin', 'manager'] },
+  { label: 'Blog', to: ROUTES.ADMIN_BLOG, icon: BookOpen, roles: ['admin', 'manager'] },
   { label: 'Team',           to: ROUTES.ADMIN_TEAM,           icon: Users,           roles: ['admin'] },
   { label: 'Ventures',       to: ROUTES.ADMIN_VENTURES,       icon: Building2,       roles: ['admin'] },
   { label: 'Access Control', to: ROUTES.ADMIN_ACCESS_CONTROL, icon: Shield,          roles: ['admin'] },
