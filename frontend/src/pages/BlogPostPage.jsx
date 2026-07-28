@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, CalendarDays, Package } from 'lucide-react';
 import SEOHead from '../components/seo/SEOHead';
 import { supabase } from '../lib/supabase';
+import BlogPostActionBar from '../components/blog/BlogPostActionBar';
 
 const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://usjtechnologies.com';
 
@@ -20,7 +21,11 @@ function escapeHtml(value) {
 }
 
 function renderInlineMarkdown(text) {
-  let html = escapeHtml(text || '').replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  let html = escapeHtml(text || '');
+  html = html.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer" class="font-bold underline decoration-2 underline-offset-2 text-[#0A1628] hover:text-[#C9A84C]">$1</a>'
+  );
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
   return html.replace(/\n/g, '<br />');
@@ -94,7 +99,7 @@ export default function BlogPostPage() {
         <div className="container-max rounded-[12px] border border-[#E2E8F0] bg-white p-10 text-center">
           <Package size={48} className="mx-auto text-gray-300 mb-4" />
           <h2 className="text-2xl font-bold text-[#0A1628] mb-2">Article Not Found</h2>
-          <p className="text-[#718096] mb-6">The article you’re looking for may have moved or is no longer published.</p>
+          <p className="text-[#718096] mb-6">The article you're looking for may have moved or is no longer published.</p>
           <Link to="/blog" className="inline-flex items-center gap-2 rounded-[6px] bg-[#0A1628] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1A2E4A]">
             <ArrowLeft size={15} /> Back to Blog
           </Link>
@@ -128,6 +133,8 @@ export default function BlogPostPage() {
     ],
   };
 
+
+
   return (
     <>
       <SEOHead
@@ -149,31 +156,38 @@ export default function BlogPostPage() {
             <span className="text-[#0A1628]">{post.title}</span>
           </nav>
 
-          <article className="overflow-hidden rounded-[16px] border border-[#E2E8F0] bg-white shadow-sm">
+          <article>
             {post.cover_image && (
-              <img src={post.cover_image} alt={post.title} className="h-72 w-full object-cover" />
+              <img
+                src={post.cover_image}
+                alt={post.title}
+                className="h-72 md:h-96 w-full object-contain bg-[#0A1628] rounded-lg mb-6"
+              />
             )}
-            <div className="p-6 md:p-8 lg:p-10">
-              <div className="mb-4 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-[#718096]">
-                {post.category && <span className="rounded-full bg-[#F8F9FA] px-2.5 py-0.5">{post.category}</span>}
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#F8F9FA] px-2.5 py-0.5">
-                  <CalendarDays size={12} /> {formatDate(post.published_at || post.created_at)}
-                </span>
-              </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-[#0A1628] leading-tight">{post.title}</h1>
-              {post.excerpt && <p className="mt-4 text-lg text-[#4A5568]">{post.excerpt}</p>}
 
-              <div className="prose prose-slate mt-8 max-w-none text-[#4A5568]">
-                {renderContent(post.content)}
-              </div>
+            <div className="mb-4 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-[#718096]">
+              {post.category && <span className="rounded-full bg-[#EDF2F7] px-2.5 py-0.5">{post.category}</span>}
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#EDF2F7] px-2.5 py-0.5">
+                <CalendarDays size={12} /> {formatDate(post.published_at || post.created_at)}
+              </span>
+            </div>
 
-              <div className="mt-10 rounded-[10px] border border-[#E2E8F0] bg-[#F8F9FA] p-5">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-[#0A1628]">Need help sourcing the right solution?</h2>
-                <p className="mt-2 text-sm text-[#4A5568]">Visit our shop to explore trusted products and request a quote for your project.</p>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <Link to="/shop" className="rounded-[6px] bg-[#0A1628] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1A2E4A]">Browse products</Link>
-                  <Link to="/contact" className="rounded-[6px] border border-[#E2E8F0] px-4 py-2 text-sm font-semibold text-[#0A1628] hover:bg-white">Contact USJ</Link>
-                </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-[#0A1628] leading-tight">{post.title}</h1>
+            {post.excerpt && <p className="mt-4 text-lg text-[#4A5568]">{post.excerpt}</p>}
+
+            {/* Action bar */}
+            <BlogPostActionBar post={post} />
+
+            <div className="prose prose-slate mt-8 max-w-none text-[#4A5568]">
+              {renderContent(post.content)}
+            </div>
+
+            <div className="mt-10 rounded-[10px] border border-[#E2E8F0] bg-[#F8F9FA] p-5">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-[#0A1628]">Need help sourcing the right solution?</h2>
+              <p className="mt-2 text-sm text-[#4A5568]">Visit our shop to explore trusted products and request a quote for your project.</p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link to="/shop" className="rounded-[6px] bg-[#0A1628] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1A2E4A]">Browse products</Link>
+                <Link to="/contact" className="rounded-[6px] border border-[#E2E8F0] px-4 py-2 text-sm font-semibold text-[#0A1628] hover:bg-white">Contact USJ</Link>
               </div>
             </div>
           </article>

@@ -85,7 +85,7 @@ export default function BlogListPage() {
               {posts.map((post) => (
                 <article key={post.id} className="overflow-hidden rounded-[12px] border border-[#E2E8F0] bg-white shadow-sm transition-transform hover:-translate-y-1">
                   {post.cover_image ? (
-                    <img src={post.cover_image} alt={post.title} className="h-44 w-full object-cover" />
+                    <img src={post.cover_image} alt={post.title} className="h-44 w-full object-contain bg-[#0A1628]" />
                   ) : (
                     <div className="flex h-44 items-center justify-center bg-[#F8F9FA] text-sm font-semibold text-[#718096]">
                       USJ Insights
