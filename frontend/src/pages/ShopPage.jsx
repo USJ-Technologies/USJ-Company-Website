@@ -5,7 +5,7 @@ import SEOHead from '../components/seo/SEOHead';
 import ProductCard from '../components/shop/ProductCard';
 import { SkeletonProductCard } from '../components/ui/Skeleton';
 import Button from '../components/ui/Button';
-import { getProducts, getBrands, getAllCategories, getRecommendedForUser } from '../lib/queries';
+import { getProducts, getBrands, getAllCategories, getRecommendedForUser, logFailedSearch } from '../lib/queries';
 import useAuthStore from '../store/authStore';
 
 const PAGE_SIZE = 24;
@@ -136,6 +136,8 @@ export default function ShopPage() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const mobileSearchRef = useRef(null);
+  const failedSearchTimer = useRef(null);
+  const loggedSearchTerms = useRef(new Set());
 
   const { user, isAuthenticated } = useAuthStore();
   const hasActiveFilters = Object.values(filters).some(Boolean);
@@ -166,6 +168,27 @@ export default function ShopPage() {
   }, [filters, page]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+  // Debounced failed-search logging: log once per distinct term per session
+  useEffect(() => {
+    // Clear any pending timer when deps change
+    clearTimeout(failedSearchTimer.current);
+
+    const term = filters.search.trim();
+    // Only log when: not loading, search is non-empty, and zero results
+    if (isLoading || !term || products.length > 0) return;
+
+    // Skip if this term was already logged this session
+    const normalized = term.toLowerCase();
+    if (loggedSearchTerms.current.has(normalized)) return;
+
+    failedSearchTimer.current = setTimeout(() => {
+      loggedSearchTerms.current.add(normalized);
+      logFailedSearch(term, 0);
+    }, 800);
+
+    return () => clearTimeout(failedSearchTimer.current);
+  }, [filters.search, products.length, isLoading]);
 
   const handleFilter = (key, value) => {
     setFilters((f) => {

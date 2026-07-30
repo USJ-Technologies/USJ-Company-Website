@@ -9,6 +9,7 @@ import Layout from './components/layout/Layout';
 import AdminLayout from './components/layout/AdminLayout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import AdminRoute from './components/layout/AdminRoute';
+import ContactCaptureModal from './components/shop/ContactCaptureModal';
 
 // Public Pages
 import HomePage from './pages/HomePage';
@@ -75,7 +76,9 @@ useEffect(() => {
 }, [location]);
 
   return (
-    <Routes>
+    <>
+      <ContactCaptureModal />
+      <Routes>
       {/* Public & user routes with standard Layout */}
       <Route element={<Layout />}>
         {/* Public */}
@@ -117,7 +120,8 @@ useEffect(() => {
         <Route path="careers" element={<CareersAdminPage />} />
         <Route path="blog" element={<BlogAdminPage />} />
       </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 };
 

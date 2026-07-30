@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Package, CheckCircle } from 'lucide-react';
-import useCartStore from '../../store/cartStore';
+import useContactStore from '../../store/contactStore';
 
 const BRAND_COLOR = { ENTER: '#1A56DB', TENDA: '#2D7D46', ZOOOK: '#C9A84C' };
 
@@ -11,16 +11,19 @@ const formatINR = (value) =>
 export default function ProductCard({ product }) {
   const [imgError, setImgError] = useState(false);
   const [added, setAdded] = useState(false);
-  const addItem = useCartStore((s) => s.addItem);
+  const requestContact = useContactStore((s) => s.requestContact);
 
   const imageUrl = product.primary_image_url;
   const brandColor = BRAND_COLOR[product.brand_name] || '#0A1628';
 
   const handleAddToCart = (e) => {
     e.preventDefault();
-    addItem(product, 1);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+    requestContact(product, 1, {
+      onAfterAdd: () => {
+        setAdded(true);
+        setTimeout(() => setAdded(false), 2000);
+      },
+    });
   };
 
   return (
@@ -115,11 +118,10 @@ export default function ProductCard({ product }) {
         {/* CTA */}
         <button
           onClick={handleAddToCart}
-          className={`w-full py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-            added
+          className={`w-full py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${added
               ? 'bg-emerald-600 text-white'
               : 'bg-[#0A1628] text-white hover:bg-[#162640]'
-          }`}
+            }`}
         >
           {added ? (
             <><CheckCircle size={13} /> Added to Cart</>

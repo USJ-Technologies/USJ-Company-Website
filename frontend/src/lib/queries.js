@@ -206,7 +206,7 @@ export function trackProductView(userId, productId, brandName, categoryName) {
   supabase
     .from('user_product_views')
     .insert({ user_id: userId, product_id: productId, brand_name: brandName ?? null, category_name: categoryName ?? null })
-    .then(() => {});
+    .then(() => { });
 }
 
 async function getUserPreferences(userId) {
@@ -400,4 +400,93 @@ export async function submitQuoteRequest({ userId, name, email, phone, organizat
   }
 
   return { data: { id: quoteId, reference_number: referenceNumber }, error: null };
+}
+
+// ── Failed Searches ──────────────────────────────────────────
+
+/**
+ * Fire-and-forget insert of a failed search term.
+ * Follows the same pattern as trackProductView — no await, no error surfaced.
+ */
+export function logFailedSearch(searchTerm, resultsCount = 0) {
+  if (!searchTerm?.trim()) return;
+  supabase
+    .from('failed_searches')
+    .insert({ search_term: searchTerm.trim(), results_count: resultsCount })
+    .then(() => { });
+}
+
+/**
+ * Admin: aggregated failed searches grouped by term.
+ * Returns [{ search_term, count, latest }] sorted by count descending.
+ */
+export async function getFailedSearches() {
+  // Supabase JS client doesn't support GROUP BY / COUNT natively,
+  // so we fetch raw rows and aggregate client-side.
+  const { data, error } = await supabase
+    .from('failed_searches')
+    .select('search_term, created_at')
+    .order('created_at', { ascending: false })
+    .limit(2000);
+
+  if (error) return { data: null, error };
+
+  const map = {};
+  for (const row of data ?? []) {
+    const term = row.search_term.toLowerCase();
+    if (!map[term]) {
+      map[term] = { search_term: row.search_term, count: 0, latest: row.created_at };
+    }
+    map[term].count += 1;
+    // Keep the most recent created_at
+    if (row.created_at > map[term].latest) {
+      map[term].latest = row.created_at;
+    }
+  }
+
+  const aggregated = Object.values(map).sort((a, b) => b.count - a.count);
+  return { data: aggregated, error: null };
+}
+
+// ── Abandoned Carts ──────────────────────────────────────────
+
+/**
+ * Admin: fetch cart_leads that have NOT submitted a quote request
+ * (matched by phone number), with their guest_cart_items nested.
+ * Returns data shaped to match AbandonedCartsTab expectations:
+ *   { id, name, phone, user_id, created_at, guest_cart_items: [...] }
+ */
+export async function getAbandonedCarts() {
+  // 1. Fetch all cart_leads with nested guest_cart_items
+  const { data: leads, error: leadsError } = await supabase
+    .from('cart_leads')
+    .select('id, name, phone, user_id, created_at, guest_cart_items(id, product_name, brand_name, image_url, quantity)')
+    .order('created_at', { ascending: false });
+
+  if (leadsError) return { data: null, error: leadsError };
+  if (!leads?.length) return { data: [], error: null };
+
+  // 2. Fetch all quote_requests to check for phone matches
+  const { data: quotes } = await supabase
+    .from('quote_requests')
+    .select('phone, created_at');
+
+  // Build a set of phones that have submitted quotes
+  const quotedPhones = new Set();
+  for (const q of quotes ?? []) {
+    if (q.phone) quotedPhones.add(q.phone);
+  }
+
+  // 3. Filter: keep leads whose phone has NO matching quote_request
+  //    created after the lead was created
+  const abandoned = leads.filter((lead) => {
+    if (!lead.phone) return true; // no phone → can't match, treat as abandoned
+    // Check if any quote was submitted from this phone after the lead was created
+    const hasQuote = (quotes ?? []).some(
+      (q) => q.phone === lead.phone && new Date(q.created_at) >= new Date(lead.created_at)
+    );
+    return !hasQuote;
+  });
+
+  return { data: abandoned, error: null };
 }
