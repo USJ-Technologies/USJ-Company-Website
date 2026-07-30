@@ -21,10 +21,10 @@ CREATE POLICY "anon_insert_failed_searches"
   ON failed_searches FOR INSERT
   WITH CHECK (true);
 
--- Only admins can read failed searches
-CREATE POLICY "admin_read_failed_searches"
+-- Managers and admins can read failed searches
+CREATE POLICY "manager_or_admin_read_failed_searches"
   ON failed_searches FOR SELECT
-  USING (is_admin());
+  USING (is_manager_or_above());
 
 -- ── Cart Leads ──────────────────────────────────────────────
 CREATE TABLE cart_leads (
@@ -46,15 +46,15 @@ CREATE POLICY "anon_insert_cart_leads"
   ON cart_leads FOR INSERT
   WITH CHECK (true);
 
--- Only admins can read cart leads
-CREATE POLICY "admin_read_cart_leads"
+-- Managers and admins can read cart leads
+CREATE POLICY "manager_or_admin_read_cart_leads"
   ON cart_leads FOR SELECT
-  USING (is_admin());
+  USING (is_manager_or_above());
 
--- Admin full access for management
-CREATE POLICY "admin_all_cart_leads"
+-- Managers and admins have full access for management
+CREATE POLICY "manager_or_admin_all_cart_leads"
   ON cart_leads FOR ALL
-  USING (is_admin());
+  USING (is_manager_or_above());
 
 -- ── Guest Cart Items ────────────────────────────────────────
 CREATE TABLE guest_cart_items (
@@ -77,12 +77,12 @@ CREATE POLICY "anon_insert_guest_cart_items"
   ON guest_cart_items FOR INSERT
   WITH CHECK (true);
 
--- Only admins can read guest cart items
-CREATE POLICY "admin_read_guest_cart_items"
+-- Managers and admins can read guest cart items
+CREATE POLICY "manager_or_admin_read_guest_cart_items"
   ON guest_cart_items FOR SELECT
-  USING (is_admin());
+  USING (is_manager_or_above());
 
--- Admin full access for management
-CREATE POLICY "admin_all_guest_cart_items"
+-- Managers and admins have full access for management
+CREATE POLICY "manager_or_admin_all_guest_cart_items"
   ON guest_cart_items FOR ALL
-  USING (is_admin());
+  USING (is_manager_or_above());
