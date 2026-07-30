@@ -421,7 +421,34 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* Product FAQs */}
+          {/* Tabs: Key Features / Specifications / In The Box */}
+          {(hasKeyFeatures || hasSpecs || hasInBox) && (
+            <ProductTabs
+              keyFeatures={product.key_features}
+              specifications={product.specifications}
+              inBox={product.in_box}
+            />
+          )}
+
+          {/* Why Buy from USJ (shown when product has no rich content) */}
+          {!hasRichData && (
+            <div className="mt-5 bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-6 md:p-8">
+              <h3 className="text-base font-bold text-[#0A1628] mb-4">Why Source From USJ Technologies?</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {WHY_US.map(({ icon: Icon, label, sub }) => (
+                  <div key={label} className="flex flex-col items-center text-center gap-2 p-4 bg-[#F8F9FA] rounded-xl border border-[#E2E8F0]">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#EBF4FF' }}>
+                      <Icon size={18} className="text-[#0A1628]" />
+                    </div>
+                    <p className="text-xs font-bold text-[#0A1628]">{label}</p>
+                    <p className="text-[10px] text-[#718096] leading-tight">{sub}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+                    {/* Product FAQs */}
           {faqItems.length > 0 && (
             <div className="mt-5 bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
               <div className="px-6 py-5 border-b border-[#E2E8F0]">
@@ -450,33 +477,6 @@ export default function ProductDetailPage() {
                     </div>
                   );
                 })}
-              </div>
-            </div>
-          )}
-
-          {/* Tabs: Key Features / Specifications / In The Box */}
-          {(hasKeyFeatures || hasSpecs || hasInBox) && (
-            <ProductTabs
-              keyFeatures={product.key_features}
-              specifications={product.specifications}
-              inBox={product.in_box}
-            />
-          )}
-
-          {/* Why Buy from USJ (shown when product has no rich content) */}
-          {!hasRichData && (
-            <div className="mt-5 bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-6 md:p-8">
-              <h3 className="text-base font-bold text-[#0A1628] mb-4">Why Source From USJ Technologies?</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {WHY_US.map(({ icon: Icon, label, sub }) => (
-                  <div key={label} className="flex flex-col items-center text-center gap-2 p-4 bg-[#F8F9FA] rounded-xl border border-[#E2E8F0]">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#EBF4FF' }}>
-                      <Icon size={18} className="text-[#0A1628]" />
-                    </div>
-                    <p className="text-xs font-bold text-[#0A1628]">{label}</p>
-                    <p className="text-[10px] text-[#718096] leading-tight">{sub}</p>
-                  </div>
-                ))}
               </div>
             </div>
           )}
