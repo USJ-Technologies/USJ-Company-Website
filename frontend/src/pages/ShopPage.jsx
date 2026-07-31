@@ -136,6 +136,7 @@ export default function ShopPage() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const mobileSearchRef = useRef(null);
+  const desktopSearchRef = useRef(null);
   const failedSearchTimer = useRef(null);
   const loggedSearchTerms = useRef(new Set());
 
@@ -168,6 +169,19 @@ export default function ShopPage() {
   }, [filters, page]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+  // When redirected from the navbar search icon (/shop?focus=search),
+  // reveal the mobile search bar and focus whichever search input is visible.
+  useEffect(() => {
+    if (searchParams.get('focus') !== 'search') return;
+    const t = setTimeout(() => {
+      setShowMobileSearch(true);
+      desktopSearchRef.current?.focus();
+      mobileSearchRef.current?.focus();
+      desktopSearchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+    return () => clearTimeout(t);
+  }, [searchParams]);
 
   // Debounced failed-search logging: log once per distinct term per session
   useEffect(() => {
@@ -329,11 +343,7 @@ export default function ShopPage() {
 
             {/* Product grid */}
             <div className="flex-1 min-w-0">
-              {/* Recommendations — only for logged-in users with no active filters */}
-              {isAuthenticated && !hasActiveFilters && (
-                <RecommendedStrip userId={user?.id} />
-              )}
-
+              {/* Search bar — sits above recommendations */}
               <div className="mb-5">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm text-[#718096]">
@@ -347,6 +357,7 @@ export default function ShopPage() {
                 <div className="relative hidden lg:block">
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#718096] pointer-events-none" />
                   <input
+                    ref={desktopSearchRef}
                     type="text"
                     placeholder="Search products..."
                     value={filters.search}
@@ -355,6 +366,11 @@ export default function ShopPage() {
                   />
                 </div>
               </div>
+
+              {/* Recommendations — only for logged-in users with no active filters */}
+              {isAuthenticated && !hasActiveFilters && (
+                <RecommendedStrip userId={user?.id} />
+              )}
 
               {isLoading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">

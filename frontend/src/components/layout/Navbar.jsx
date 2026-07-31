@@ -98,7 +98,7 @@ export default function Navbar() {
           {/* Right Actions */}
           <div className="flex items-center gap-2">
             <Link
-              to={ROUTES.SHOP}
+              to={`${ROUTES.SHOP}?focus=search`}
               className="p-2 rounded-md text-[#4A5568] hover:text-[#0A1628] hover:bg-gray-100 transition-colors"
               aria-label="Search products"
             >

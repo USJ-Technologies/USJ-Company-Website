@@ -16,6 +16,7 @@ import { isSafeExternalUrl } from '../lib/url';
 import { supabase } from '../lib/supabase';
 import ReviewsList from '../components/reviews/ReviewsList';
 import ReviewForm from '../components/reviews/ReviewForm';
+import ShareButton from '../components/shop/ShareButton';
 
 const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://www.usjtechnologies.com';
 
@@ -309,20 +310,28 @@ export default function ProductDetailPage() {
               {/* ── Product Info ── */}
               <div className="p-5 sm:p-8 lg:p-10 flex flex-col">
                 {/* Brand + category badges */}
-                <div className="flex items-center gap-2 flex-wrap mb-3">
-                  {product.brand_name && (
-                    <span
-                      className="text-xs font-bold tracking-widest uppercase px-2 py-0.5 rounded"
-                      style={{ backgroundColor: `${brandColor}15`, color: brandColor }}
-                    >
-                      {product.brand_name}
-                    </span>
-                  )}
-                  {product.category_name && (
-                    <span className="text-xs text-[#718096] bg-[#F8F9FA] px-2 py-0.5 rounded border border-[#E2E8F0]">
-                      {product.category_name}
-                    </span>
-                  )}
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {product.brand_name && (
+                      <span
+                        className="text-xs font-bold tracking-widest uppercase px-2 py-0.5 rounded"
+                        style={{ backgroundColor: `${brandColor}15`, color: brandColor }}
+                      >
+                        {product.brand_name}
+                      </span>
+                    )}
+                    {product.category_name && (
+                      <span className="text-xs text-[#718096] bg-[#F8F9FA] px-2 py-0.5 rounded border border-[#E2E8F0]">
+                        {product.category_name}
+                      </span>
+                    )}
+                  </div>
+                  <ShareButton
+                    url={`${SITE_URL}/product/${product.slug}`}
+                    title={`${product.name}${product.model ? ` – ${product.model}` : ''}`}
+                    text={`Check out ${product.name} on USJ Technologies`}
+                    className="px-2.5 py-1.5 flex-shrink-0"
+                  />
                 </div>
 
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0A1628] leading-tight mb-2">
