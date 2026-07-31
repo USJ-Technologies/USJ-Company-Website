@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import Skeleton from '../../components/ui/Skeleton';
-import { Users, Package, FileText, Clock, TrendingUp, CheckCircle } from 'lucide-react';
+import { Users, Package, FileText, Clock, TrendingUp, CheckCircle, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const StatCard = ({ title, value, icon: Icon, sub, color = '#C9A84C' }) => (
@@ -36,12 +36,14 @@ const DashboardPage = () => {
         { count: quoteCount },
         { count: newQuoteCount },
         { count: userCount },
+        { count: pendingReviewsCount },
         { data: quotes },
       ] = await Promise.all([
         supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('quote_requests').select('*', { count: 'exact', head: true }),
         supabase.from('quote_requests').select('*', { count: 'exact', head: true }).eq('status', 'new'),
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        supabase.from('product_reviews').select('*', { count: 'exact', head: true }).eq('is_approved', false),
         supabase
           .from('quote_requests')
           .select('id, reference_number, name, email, organization, status, created_at, quote_items(quantity)')
@@ -54,6 +56,7 @@ const DashboardPage = () => {
         totalQuotes: quoteCount ?? 0,
         newQuotes: newQuoteCount ?? 0,
         users: userCount ?? 0,
+        pendingReviews: pendingReviewsCount ?? 0,
       });
       setRecentQuotes(quotes ?? []);
       setLoading(false);
@@ -73,15 +76,18 @@ const DashboardPage = () => {
 
       {/* Stat cards */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+          {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
           <StatCard title="Active Products" value={stats.products} icon={Package} sub="Across all brands" />
           <StatCard title="Total Quotes" value={stats.totalQuotes} icon={FileText} sub="All time" color="#1A56DB" />
           <StatCard title="New Quotes" value={stats.newQuotes} icon={Clock} sub="Awaiting review" color="#D97706" />
           <StatCard title="Registered Users" value={stats.users} icon={Users} sub="In Supabase Auth" color="#2D7D46" />
+          <Link to="/admin/reviews" className="block transition-transform hover:-translate-y-1">
+            <StatCard title="Pending Reviews" value={stats.pendingReviews} icon={Star} sub="Awaiting moderation" color="#EAB308" />
+          </Link>
         </div>
       )}
 
@@ -143,11 +149,12 @@ const DashboardPage = () => {
       </div>
 
       {/* Quick links */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Manage Quote Requests', to: '/admin/inquiries', desc: 'Review and respond to customer quotes' },
           { label: 'Manage Products', to: '/admin/products', desc: 'View and update the product catalog' },
           { label: 'Manage Ventures', to: '/admin/ventures', desc: 'Update USJ ventures & certifications' },
+          { label: 'Manage Reviews', to: '/admin/reviews', desc: 'Approve or reject customer product reviews' },
         ].map((link) => (
           <Link
             key={link.to}

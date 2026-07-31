@@ -13,6 +13,9 @@ import Skeleton from '../components/ui/Skeleton';
 import { APP_CONFIG, ROUTES } from '../config/app';
 import SEOHead from '../components/seo/SEOHead';
 import { isSafeExternalUrl } from '../lib/url';
+import { supabase } from '../lib/supabase';
+import ReviewsList from '../components/reviews/ReviewsList';
+import ReviewForm from '../components/reviews/ReviewForm';
 
 const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://www.usjtechnologies.com';
 
@@ -34,6 +37,8 @@ export default function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [externalRefresh, setExternalRefresh] = useState(0);
 
   const requestContact = useContactStore(s => s.requestContact);
   const { user, isAuthenticated } = useAuthStore();
@@ -51,8 +56,19 @@ export default function ProductDetailPage() {
         if (isAuthenticated && user?.id) {
           trackProductView(user.id, data.id, data.brand_name, data.category_name);
         }
+        
+        // Fetch reviews for JSON-LD
+        supabase
+          .from('product_reviews')
+          .select('*')
+          .eq('product_slug', slug)
+          .eq('is_approved', true)
+          .order('created_at', { ascending: false })
+          .then(({ data: rData }) => {
+            if (rData) setReviews(rData);
+            setLoading(false);
+          });
       }
-      setLoading(false);
     });
   }, [slug, isAuthenticated, user?.id]);
 
@@ -144,6 +160,22 @@ export default function ProductDetailPage() {
         { '@type': 'ListItem', 'position': product.brand_name ? 4 : 3, 'name': product.name, 'item': `${SITE_URL}/product/${product.slug}` },
       ],
     },
+    ...(reviews.length > 0 ? {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1),
+        reviewCount: reviews.length,
+        bestRating: 5,
+        worstRating: 1
+      },
+      review: reviews.slice(0, 5).map(r => ({
+        '@type': 'Review',
+        author: { '@type': 'Person', name: r.reviewer_name },
+        reviewRating: { '@type': 'Rating', ratingValue: r.rating },
+        reviewBody: r.review_body,
+        datePublished: r.created_at.split('T')[0]
+      }))
+    } : {})
   };
 
   const productFaqs = Array.isArray(product.faqs)
@@ -421,14 +453,15 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* Tabs: Key Features / Specifications / In The Box */}
-          {(hasKeyFeatures || hasSpecs || hasInBox) && (
-            <ProductTabs
-              keyFeatures={product.key_features}
-              specifications={product.specifications}
-              inBox={product.in_box}
-            />
-          )}
+          {/* Tabs: Key Features / Specifications / In The Box / Reviews */}
+          <ProductTabs
+            product={product}
+            keyFeatures={product.key_features}
+            specifications={product.specifications}
+            inBox={product.in_box}
+            externalRefresh={externalRefresh}
+            onReviewSubmitted={() => setExternalRefresh(prev => prev + 1)}
+          />
 
           {/* Why Buy from USJ (shown when product has no rich content) */}
           {!hasRichData && (
@@ -525,11 +558,12 @@ export default function ProductDetailPage() {
 }
 
 // ── Tabs Component ────────────────────────────────────────────────────────────
-function ProductTabs({ keyFeatures = [], specifications = {}, inBox = [] }) {
+function ProductTabs({ product, keyFeatures = [], specifications = {}, inBox = [], externalRefresh, onReviewSubmitted }) {
   const tabs = [
     { id: 'features', label: 'Key Features', show: Array.isArray(keyFeatures) && keyFeatures.length > 0 },
     { id: 'specs', label: 'Specifications', show: specifications && Object.keys(specifications).length > 0 },
     { id: 'inbox', label: 'In The Box', show: Array.isArray(inBox) && inBox.length > 0 },
+    { id: 'reviews', label: 'Reviews', show: true },
   ].filter(t => t.show);
 
   const [active, setActive] = useState(tabs[0]?.id ?? 'features');
@@ -587,6 +621,18 @@ function ProductTabs({ keyFeatures = [], specifications = {}, inBox = [] }) {
               </li>
             ))}
           </ul>
+        )}
+
+        {active === 'reviews' && (
+          <div>
+            <ReviewsList productSlug={product.slug} externalRefresh={externalRefresh} />
+            <ReviewForm 
+              productId={product.id} 
+              productSlug={product.slug} 
+              productName={product.name}
+              onReviewSubmitted={onReviewSubmitted}
+            />
+          </div>
         )}
       </div>
     </div>

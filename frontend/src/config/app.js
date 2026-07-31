@@ -94,4 +94,5 @@ export const ROUTES = {
   ADMIN_ACCESS_CONTROL: '/admin/access-control',
   ADMIN_CAREERS: '/admin/careers',
   ADMIN_BLOG: '/admin/blog',
+  ADMIN_REVIEWS: '/admin/reviews',
 };

@@ -45,6 +45,7 @@ import TeamAdminPage from './pages/admin/TeamAdminPage';
 import AccessControlAdminPage from './pages/admin/AccessControlAdminPage';
 import CareersAdminPage from './pages/admin/CareersAdminPage';
 import BlogAdminPage from './pages/admin/BlogAdminPage';
+import ReviewsAdminPage from './pages/admin/ReviewsAdminPage';
 
 const App = () => {
   const { init, isAuthenticated } = useAuthStore();
@@ -119,6 +120,7 @@ useEffect(() => {
         <Route path="access-control" element={<AccessControlAdminPage />} />
         <Route path="careers" element={<CareersAdminPage />} />
         <Route path="blog" element={<BlogAdminPage />} />
+        <Route path="reviews" element={<ReviewsAdminPage />} />
       </Route>
       </Routes>
     </>
