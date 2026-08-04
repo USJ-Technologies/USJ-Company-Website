@@ -84,6 +84,7 @@ const emptyForm = {
   slug: '', key_features: [], specifications: {}, in_box: [], faqs: [],
   primary_image_url: '', additionalImages: [], product_url: '',
   is_active: true, is_featured: false, is_b2b: true, unit_price: '', mrp: '',
+  variant_group: '', variant_label: '',
 };
 
 function toFormData(p) {
@@ -113,6 +114,8 @@ function toFormData(p) {
     is_b2b: p.is_b2b ?? true,
     unit_price: p.unit_price != null ? String(p.unit_price) : '',
     mrp: p.mrp != null ? String(p.mrp) : '',
+    variant_group: p.variant_group || '',
+    variant_label: p.variant_label || '',
   };
 }
 
@@ -488,6 +491,37 @@ function ProductForm({ initialData, onSave, onClose, saving }) {
             />
           </div>
 
+          {/* ── Variants (Size / Capacity) ── */}
+          <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
+            <SectionHeader title="Variants (Size / Capacity)" />
+            <p className="text-xs text-[#718096] mb-4 -mt-1 leading-relaxed">
+              Link products that are the same model in different sizes (e.g. a 16GB / 32GB / 64GB pen drive).
+              Give every size the <span className="font-semibold text-[#4A5568]">same Variant Group</span>, and a
+              short <span className="font-semibold text-[#4A5568]">Variant Label</span> for each. A size selector
+              then appears on each product page. Leave blank for standalone products.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <FieldRow label="Variant Group">
+                <input
+                  value={form.variant_group}
+                  onChange={e => set('variant_group', e.target.value)}
+                  className={inputCls}
+                  placeholder="e.g. hp-v236w"
+                />
+                <p className="text-[10px] text-[#718096] mt-1">Same value across all sizes of this model.</p>
+              </FieldRow>
+              <FieldRow label="Variant Label">
+                <input
+                  value={form.variant_label}
+                  onChange={e => set('variant_label', e.target.value)}
+                  className={inputCls}
+                  placeholder="e.g. 64GB"
+                />
+                <p className="text-[10px] text-[#718096] mt-1">Shown on this product's selector button.</p>
+              </FieldRow>
+            </div>
+          </div>
+
           {/* ── Key Features ── */}
           <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
             <SectionHeader title="Key Features" />
@@ -833,6 +867,8 @@ const ProductsAdminPage = () => {
       is_b2b: formData.is_b2b,
       unit_price: formData.unit_price !== '' && formData.unit_price != null ? parseFloat(formData.unit_price) : null,
       mrp: formData.mrp !== '' && formData.mrp != null ? parseFloat(formData.mrp) : null,
+      variant_group: formData.variant_group?.trim() || null,
+      variant_label: formData.variant_label?.trim() || null,
       updated_at: new Date().toISOString(),
     };
 

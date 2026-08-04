@@ -69,7 +69,28 @@ export async function getProductBySlug(slug) {
     .eq('product_id', product.id)
     .order('display_order');
 
-  return { data: { ...product, images: images ?? [] }, error: null };
+  // Fetch sibling variants (same model, different size/capacity) if grouped
+  let variants = [];
+  if (product.variant_group) {
+    const { data: siblings } = await supabase
+      .from('products')
+      .select('slug, variant_label, unit_price')
+      .eq('variant_group', product.variant_group)
+      .eq('is_active', true);
+
+    variants = (siblings ?? []).sort(sortVariants);
+  }
+
+  return { data: { ...product, images: images ?? [], variants }, error: null };
+}
+
+// Natural sort for variant labels so "32GB" comes before "128GB"
+// (leading number compared numerically, then the label as a tiebreaker).
+function sortVariants(a, b) {
+  const na = parseFloat(a.variant_label ?? '');
+  const nb = parseFloat(b.variant_label ?? '');
+  if (!Number.isNaN(na) && !Number.isNaN(nb) && na !== nb) return na - nb;
+  return String(a.variant_label ?? '').localeCompare(String(b.variant_label ?? ''), undefined, { numeric: true });
 }
 
 export async function getFeaturedProducts(limit = 8) {

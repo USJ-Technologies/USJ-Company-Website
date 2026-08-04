@@ -406,6 +406,38 @@ export default function ProductDetailPage() {
                   </div>
                 )}
 
+                {/* Available Sizes / Variants */}
+                {Array.isArray(product.variants) && product.variants.length > 1 && (
+                  <div className="mb-5">
+                    <span className="block text-sm font-medium text-[#0A1628] mb-2">
+                      Available Sizes
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {product.variants.map((v) => {
+                        const isCurrent = v.slug === product.slug;
+                        const label = v.variant_label || 'Variant';
+                        return isCurrent ? (
+                          <span
+                            key={v.slug}
+                            aria-current="true"
+                            className="px-3.5 py-2 rounded-[6px] text-sm font-semibold border-2 border-[#C9A84C] bg-[#FFF8E7] text-[#0A1628]"
+                          >
+                            {label}
+                          </span>
+                        ) : (
+                          <Link
+                            key={v.slug}
+                            to={`/product/${v.slug}`}
+                            className="px-3.5 py-2 rounded-[6px] text-sm font-medium border border-[#E2E8F0] text-[#4A5568] hover:border-[#0A1628] hover:text-[#0A1628] transition-colors"
+                          >
+                            {label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Quantity */}
                 <div className="flex items-center gap-4 mb-5">
                   <span className="text-sm font-medium text-[#0A1628]">Quantity</span>
