@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
 import { submitQuoteRequest } from '../lib/queries';
+import { trackEvent } from '../lib/analytics';
 
 const ORG_STORAGE_KEY = 'usj_known_organizations';
 const DEFAULT_ORGS = [
@@ -187,6 +188,16 @@ export default function QuoteRequestPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [referenceNumber, setReferenceNumber] = useState('');
+  const quoteFormStartedSent = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      quoteFormStartedSent.current = sessionStorage.getItem('usj_quote_form_started_sent') === '1';
+    } catch {
+      quoteFormStartedSent.current = false;
+    }
+  }, []);
 
   // Guard: redirect if cart is empty
   if (items.length === 0 && !submitted) {
@@ -262,6 +273,18 @@ export default function QuoteRequestPage() {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
     if (errors[name]) setErrors((er) => ({ ...er, [name]: '' }));
+
+    if (!quoteFormStartedSent.current) {
+      quoteFormStartedSent.current = true;
+      try {
+        sessionStorage.setItem('usj_quote_form_started_sent', '1');
+      } catch {
+        // ignore storage failures
+      }
+      trackEvent('quote_form_started', {
+        field: name,
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -290,6 +313,12 @@ export default function QuoteRequestPage() {
       console.error('Quote submission error:', error);
       return;
     }
+
+    trackEvent('quote_form_submitted', {
+      quote_items: items.length,
+      total_quantity: items.reduce((acc, item) => acc + item.qty, 0),
+      has_user: !!user?.id,
+    });
 
     setReferenceNumber(data.reference_number);
     clearCart();

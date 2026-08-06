@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import toast from 'react-hot-toast';
 import { upsertCartItem, removeCartItem, updateCartItemQty } from '../lib/queries';
+import { trackEvent } from '../lib/analytics';
 import useAuthStore from './authStore';
 
 const CART_KEY = 'usj_cart';
@@ -45,6 +46,12 @@ const useCartStore = create((set, get) => ({
     if (userId) upsertCartItem(userId, product.id, newQty).catch(console.warn);
 
     toast.success(`${product.name} added to cart`);
+    trackEvent('add_to_cart', {
+      product_id: product.id,
+      product_name: product.name,
+      price: product.unit_price ?? product.price ?? null,
+      quantity: newQty,
+    });
   },
 
   removeItem: (productId) => {

@@ -6,6 +6,7 @@ import ProductCard from '../components/shop/ProductCard';
 import { SkeletonProductCard } from '../components/ui/Skeleton';
 import Button from '../components/ui/Button';
 import { getProducts, getBrands, getAllCategories, getRecommendedForUser, logFailedSearch } from '../lib/queries';
+import { trackEvent } from '../lib/analytics';
 import useAuthStore from '../store/authStore';
 
 const PAGE_SIZE = 24;
@@ -139,6 +140,7 @@ export default function ShopPage() {
   const desktopSearchRef = useRef(null);
   const failedSearchTimer = useRef(null);
   const loggedSearchTerms = useRef(new Set());
+  const successfulSearchTerms = useRef(new Set());
 
   const { user, isAuthenticated } = useAuthStore();
   const hasActiveFilters = Object.values(filters).some(Boolean);
@@ -202,6 +204,20 @@ export default function ShopPage() {
     }, 800);
 
     return () => clearTimeout(failedSearchTimer.current);
+  }, [filters.search, products.length, isLoading]);
+
+  useEffect(() => {
+    const term = filters.search.trim();
+    if (isLoading || !term || products.length === 0) return;
+
+    const normalized = term.toLowerCase();
+    if (successfulSearchTerms.current.has(normalized)) return;
+
+    successfulSearchTerms.current.add(normalized);
+    trackEvent('product_search', {
+      search_query: term,
+      results_count: products.length,
+    });
   }, [filters.search, products.length, isLoading]);
 
   const handleFilter = (key, value) => {

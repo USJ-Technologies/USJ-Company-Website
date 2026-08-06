@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Award, CheckCircle, Users, ArrowRight, MapPin, ChevronRight } from 'lucide-react';
 import { APP_CONFIG, ROUTES } from '../../config/app';
+import { trackEvent } from '../../lib/analytics';
 
 const credentials = [
   { icon: ShieldCheck, label: 'GeM Registered', sub: 'Govt. e-Marketplace Seller' },
@@ -70,6 +71,7 @@ export default function HeroSection() {
           <div className="flex flex-wrap gap-3 mb-8">
             <Link
               to={ROUTES.SHOP}
+              onClick={() => trackEvent('cta_click', { button: 'hero_browse_products' })}
               className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-white rounded-lg transition-all hover:-translate-y-px"
               style={{ backgroundColor: '#0A1628', boxShadow: '0 4px 14px rgba(10,22,40,0.3)' }}
             >
@@ -77,6 +79,7 @@ export default function HeroSection() {
             </Link>
             <Link
               to={ROUTES.CONTACT}
+              onClick={() => trackEvent('cta_click', { button: 'hero_request_quote' })}
               className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-[#0A1628] rounded-lg border-2 border-[#0A1628] hover:bg-[#0A1628] hover:text-white transition-all"
             >
               Request a Quote

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MessageSquare, ArrowRight, Phone } from 'lucide-react';
 import { APP_CONFIG, ROUTES } from '../../config/app';
+import { trackEvent } from '../../lib/analytics';
 
 export default function ContactCTABanner() {
   const phone = APP_CONFIG.company.phone;
@@ -48,6 +49,7 @@ export default function ContactCTABanner() {
           <div className="flex flex-col gap-4 lg:items-end">
             <Link
               to={ROUTES.CONTACT}
+              onClick={() => trackEvent('cta_click', { button: 'contact_banner_send_inquiry' })}
               className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl text-sm font-bold text-[#0A1628] transition-all hover:-translate-y-0.5 whitespace-nowrap"
               style={{ backgroundColor: '#C9A84C', boxShadow: '0 4px 20px rgba(201,168,76,0.35)' }}
             >
@@ -58,6 +60,7 @@ export default function ContactCTABanner() {
               href="https://gem.gov.in"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackEvent('cta_click', { button: 'contact_banner_gem_quote' })}
               className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl text-sm font-bold text-white transition-all hover:bg-white/10 whitespace-nowrap"
               style={{ border: '1px solid rgba(255,255,255,0.15)' }}
             >

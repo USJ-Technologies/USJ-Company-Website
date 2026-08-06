@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, Package, MessageSquare,
-  Building2, Award, Menu, X, LogOut, ChevronRight, Users, Shield, Briefcase, BookOpen,
+  Building2, Award, Menu, X, LogOut, ChevronRight, Users, Shield, Briefcase, BookOpen, BarChart2,
 } from 'lucide-react';
 import { ROUTES } from '../../config/app';
 import useAuthStore from '../../store/authStore';
@@ -11,6 +11,7 @@ const ALL_NAV_ITEMS = [
   { label: 'Dashboard',      to: ROUTES.ADMIN_DASHBOARD,      icon: LayoutDashboard, roles: ['admin', 'manager', 'staff'] },
   { label: 'Inquiries',      to: ROUTES.ADMIN_INQUIRIES,      icon: MessageSquare,   roles: ['admin', 'manager', 'staff'] },
   { label: 'Products',       to: ROUTES.ADMIN_PRODUCTS,       icon: Package,         roles: ['admin', 'manager'] },
+  { label: 'Analytics',      to: ROUTES.ADMIN_ANALYTICS,      icon: BarChart2,       roles: ['admin', 'manager'] },
   { label: 'Reviews',        to: ROUTES.ADMIN_REVIEWS,        icon: MessageSquare,   roles: ['admin', 'manager'] },
   { label: 'Certifications', to: ROUTES.ADMIN_CERTIFICATIONS, icon: Award,           roles: ['admin', 'manager'] },
   { label: 'Careers',        to: ROUTES.ADMIN_CAREERS,        icon: Briefcase,       roles: ['admin', 'manager'] },

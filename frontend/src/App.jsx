@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import useAuthStore from './store/authStore';
 import useCartStore from './store/cartStore';
 import { getCartFromDb } from './lib/queries';
+import { trackSessionEndBeacon } from './lib/analytics';
 import { Routes, Route, useLocation } from 'react-router-dom';
 
 // Layouts & Wrappers
@@ -46,13 +47,30 @@ import AccessControlAdminPage from './pages/admin/AccessControlAdminPage';
 import CareersAdminPage from './pages/admin/CareersAdminPage';
 import BlogAdminPage from './pages/admin/BlogAdminPage';
 import ReviewsAdminPage from './pages/admin/ReviewsAdminPage';
+import AnalyticsPage from './pages/admin/AnalyticsPage';
 
 const App = () => {
   const { init, isAuthenticated } = useAuthStore();
   const { mergeWithDb } = useCartStore();
 
-  // Init Supabase Auth listener on mount
-  useEffect(() => { init(); }, [init]);
+  // Init Supabase Auth listener on mount and track session end on unload
+  useEffect(() => {
+    init();
+    let ended = false;
+    const handleSessionEnd = () => {
+      if (ended) return;
+      ended = true;
+      trackSessionEndBeacon();
+    };
+
+    window.addEventListener('beforeunload', handleSessionEnd);
+    window.addEventListener('pagehide', handleSessionEnd);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleSessionEnd);
+      window.removeEventListener('pagehide', handleSessionEnd);
+    };
+  }, [init]);
 
   // When user logs in, merge guest cart with any server cart
   useEffect(() => {
@@ -121,6 +139,7 @@ useEffect(() => {
         <Route path="careers" element={<CareersAdminPage />} />
         <Route path="blog" element={<BlogAdminPage />} />
         <Route path="reviews" element={<ReviewsAdminPage />} />
+        <Route path="analytics" element={<AnalyticsPage />} />
       </Route>
       </Routes>
     </>
