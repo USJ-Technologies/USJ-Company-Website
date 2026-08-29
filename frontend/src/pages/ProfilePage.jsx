@@ -1,10 +1,18 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
-import { User, Mail, Phone, Building2, Edit2, LogOut, ShieldCheck, Save, X } from 'lucide-react';
+import { User, Mail, Phone, Building2, Edit2, LogOut, ShieldCheck, Save, X, AlertTriangle, Trash2, Loader } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user, profile, updateProfile, logout, isLoading } = useAuthStore();
+  const navigate = useNavigate();
+  const { user, profile, updateProfile, logout, deleteAccount, isLoading } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const isTeamAccount = ['admin', 'manager', 'staff'].includes(profile?.role);
+  const isVendorAccount = profile?.role === 'vendor';
   const [formData, setFormData] = useState({
     name: profile?.name || '',
     phone: profile?.phone || '',
@@ -32,6 +40,27 @@ export default function ProfilePage() {
       organization: profile?.organization || '',
     });
     setIsEditing(true);
+  };
+
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault();
+    setDeleteError('');
+
+    if (!deletePassword) {
+      setDeleteError('Enter your password to confirm deletion.');
+      return;
+    }
+
+    setDeletingAccount(true);
+    const result = await deleteAccount(deletePassword);
+    setDeletingAccount(false);
+
+    if (result.success) {
+      navigate('/');
+      return;
+    }
+
+    setDeleteError(result.message || 'Account deletion failed');
   };
 
   const displayName = profile?.name || user?.email?.split('@')[0] || 'User';
@@ -207,6 +236,97 @@ export default function ProfilePage() {
               <p className="text-xs text-[#718096]">Account type</p>
               <p className="text-sm font-medium text-[#0A1628] capitalize">{profile?.role || 'Customer'}</p>
             </div>
+          </div>
+        </div>
+
+        {/* Delete account */}
+        <div className="mt-4 bg-white rounded-2xl border border-red-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-5 border-b border-red-100">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={16} className="text-red-600" />
+              <h3 className="font-bold text-[#0A1628] text-sm">Delete Account</h3>
+            </div>
+          </div>
+
+          <div className="px-6 py-5 space-y-4">
+            {isTeamAccount ? (
+              <p className="text-sm text-[#718096]">
+                Team accounts cannot be deleted from this page. Contact another administrator to remove your access.
+              </p>
+            ) : (
+              <>
+                <p className="text-sm text-[#718096]">
+                  Permanently delete your account and personal data from USJ Technologies.
+                  {isVendorAccount && (
+                    <> Your vendor storefront will be closed, products hidden, and KYC documents removed.</>
+                  )}
+                  {' '}This action cannot be undone.
+                </p>
+
+                {!showDeleteConfirm ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDeleteConfirm(true);
+                      setDeletePassword('');
+                      setDeleteError('');
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-red-600 border border-red-200 rounded-[6px] hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 size={15} /> Delete my account
+                  </button>
+                ) : (
+                  <form onSubmit={handleDeleteAccount} className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#0A1628] mb-1">
+                        Confirm with your password
+                      </label>
+                      <input
+                        type="password"
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        placeholder="Enter your password"
+                        className="w-full px-3 py-2 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-red-300"
+                        autoComplete="current-password"
+                      />
+                    </div>
+
+                    {deleteError && (
+                      <p className="text-xs text-red-600">{deleteError}</p>
+                    )}
+
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowDeleteConfirm(false);
+                          setDeletePassword('');
+                          setDeleteError('');
+                        }}
+                        className="px-4 py-2 text-sm font-medium border border-[#E2E8F0] rounded-[6px] text-[#4A5568] hover:border-[#0A1628] transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={deletingAccount}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-[6px] text-white bg-red-600 hover:bg-red-700 disabled:opacity-60 transition-colors"
+                      >
+                        {deletingAccount ? (
+                          <>
+                            <Loader size={14} className="animate-spin" /> Deleting…
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 size={14} /> Permanently delete account
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </>
+            )}
           </div>
         </div>
 

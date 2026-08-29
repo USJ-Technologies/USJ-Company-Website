@@ -108,6 +108,73 @@ const useAuthStore = create((set, get) => ({
     return { success: true };
   },
 
+  deleteAccount: async (password) => {
+    const { user, session, profile } = get();
+    if (!user?.email || !session) {
+      return { success: false, message: 'Not authenticated' };
+    }
+
+    if (['admin', 'manager', 'staff'].includes(profile?.role)) {
+      return {
+        success: false,
+        message: 'Team accounts must be removed by an administrator.',
+      };
+    }
+
+    set({ isLoading: true });
+
+    const { data: reauthData, error: authError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password,
+    });
+
+    if (authError) {
+      set({ isLoading: false });
+      return { success: false, message: 'Incorrect password' };
+    }
+
+    const accessToken = reauthData.session?.access_token ?? session.access_token;
+
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        set({ isLoading: false });
+        return {
+          success: false,
+          message: body.error || 'Account deletion failed',
+        };
+      }
+
+      localStorage.removeItem('usj_cart');
+      localStorage.removeItem('usj_wishlist');
+
+      await supabase.auth.signOut();
+      set({
+        user: null,
+        session: null,
+        profile: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+      toast.success('Your account has been deleted');
+      return { success: true };
+    } catch (error) {
+      set({ isLoading: false });
+      return {
+        success: false,
+        message: error.message || 'Account deletion failed',
+      };
+    }
+  },
+
   isAdmin: () => get().profile?.role === 'admin',
   hasRole: (...roles) => roles.includes(get().profile?.role),
   isVendor: () => get().profile?.role === 'vendor',
