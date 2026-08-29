@@ -121,58 +121,38 @@ const useAuthStore = create((set, get) => ({
       };
     }
 
-    set({ isLoading: true });
-
-    const { data: reauthData, error: authError } = await supabase.auth.signInWithPassword({
+    const { error: authError } = await supabase.auth.signInWithPassword({
       email: user.email,
       password,
     });
 
     if (authError) {
-      set({ isLoading: false });
       return { success: false, message: 'Incorrect password' };
     }
 
-    const accessToken = reauthData.session?.access_token ?? session.access_token;
+    const { error: deleteError } = await supabase.rpc('delete_own_account');
 
-    try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        set({ isLoading: false });
-        return {
-          success: false,
-          message: body.error || 'Account deletion failed',
-        };
-      }
-
-      localStorage.removeItem('usj_cart');
-      localStorage.removeItem('usj_wishlist');
-
-      await supabase.auth.signOut();
-      set({
-        user: null,
-        session: null,
-        profile: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
-      toast.success('Your account has been deleted');
-      return { success: true };
-    } catch (error) {
-      set({ isLoading: false });
+    if (deleteError) {
+      toast.error(deleteError.message || 'Account deletion failed');
       return {
         success: false,
-        message: error.message || 'Account deletion failed',
+        message: deleteError.message || 'Account deletion failed',
       };
     }
+
+    localStorage.removeItem('usj_cart');
+    localStorage.removeItem('usj_wishlist');
+
+    await supabase.auth.signOut();
+    set({
+      user: null,
+      session: null,
+      profile: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
+    toast.success('Your account has been deleted');
+    return { success: true };
   },
 
   isAdmin: () => get().profile?.role === 'admin',
