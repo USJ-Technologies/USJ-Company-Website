@@ -8,8 +8,10 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 // Layouts & Wrappers
 import Layout from './components/layout/Layout';
 import AdminLayout from './components/layout/AdminLayout';
+import VendorLayout from './components/layout/VendorLayout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import AdminRoute from './components/layout/AdminRoute';
+import VendorRoute from './components/layout/VendorRoute';
 import ContactCaptureModal from './components/shop/ContactCaptureModal';
 
 // Public Pages
@@ -30,6 +32,9 @@ import QuoteRequestPage from './pages/QuoteRequestPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import WishlistPage from './pages/WishlistPage';
+import BecomeSellerPage from './pages/BecomeSellerPage';
+import VendorStorefrontPage from './pages/VendorStorefrontPage';
+import SellerTermsPage from './pages/SellerTermsPage';
 
 // Protected User Pages
 import ProfilePage from './pages/ProfilePage';
@@ -48,6 +53,13 @@ import CareersAdminPage from './pages/admin/CareersAdminPage';
 import BlogAdminPage from './pages/admin/BlogAdminPage';
 import ReviewsAdminPage from './pages/admin/ReviewsAdminPage';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
+import VendorsAdminPage from './pages/admin/VendorsAdminPage';
+
+// Vendor Pages
+import VendorDashboardPage from './pages/vendor/VendorDashboardPage';
+import VendorProductsPage from './pages/vendor/VendorProductsPage';
+import VendorOrdersPage from './pages/vendor/VendorOrdersPage';
+import VendorAddProductPage from './pages/vendor/VendorAddProductPage';
 
 const App = () => {
   const { init, isAuthenticated } = useAuthStore();
@@ -114,11 +126,14 @@ useEffect(() => {
         <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/product/:slug" element={<ProductDetailPage />} />
         <Route path="/shop/product/:slug" element={<ProductDetailPage />} />
+        <Route path="/store/:slug" element={<VendorStorefrontPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/quote-request" element={<QuoteRequestPage />} />
+        <Route path="/seller-terms" element={<SellerTermsPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/become-a-seller" element={<BecomeSellerPage />} />
 
         {/* Protected user */}
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
@@ -136,10 +151,21 @@ useEffect(() => {
         <Route path="certifications" element={<CertificationsAdminPage />} />
         <Route path="team" element={<TeamAdminPage />} />
         <Route path="access-control" element={<AccessControlAdminPage />} />
+        <Route path="vendors" element={<VendorsAdminPage />} />
         <Route path="careers" element={<CareersAdminPage />} />
         <Route path="blog" element={<BlogAdminPage />} />
         <Route path="reviews" element={<ReviewsAdminPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
+      </Route>
+
+      {/* Vendor routes */}
+      <Route path="/vendor" element={<VendorRoute><VendorLayout /></VendorRoute>}>
+        <Route index element={<VendorDashboardPage />} />
+        <Route path="dashboard" element={<VendorDashboardPage />} />
+        <Route path="products" element={<VendorProductsPage />} />
+        <Route path="products/new" element={<VendorAddProductPage />} />
+        <Route path="products/:productId" element={<VendorAddProductPage />} />
+        <Route path="orders" element={<VendorOrdersPage />} />
       </Route>
       </Routes>
     </>

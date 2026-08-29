@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Menu, X, Search, ShoppingCart, User, ChevronDown,
-  LogOut, Package, Settings,
+  LogOut, Package, Settings, Store,
 } from 'lucide-react';
 import { APP_CONFIG, ROUTES } from '../../config/app';
 import useAuthStore from '../../store/authStore';
@@ -147,6 +147,11 @@ export default function Navbar() {
                     <Link to={ROUTES.ORDERS} className="flex items-center gap-2 px-4 py-2 text-sm text-[#0A1628] hover:bg-gray-50">
                       <Package size={15} /> My Orders
                     </Link>
+                    {profile?.role === 'vendor' && (
+                      <Link to={ROUTES.VENDOR_DASHBOARD} className="flex items-center gap-2 px-4 py-2 text-sm text-[#0A1628] hover:bg-gray-50">
+                        <Store size={15} /> Vendor Portal
+                      </Link>
+                    )}
                     {['admin', 'manager', 'staff'].includes(profile?.role) && (
                       <Link to={ROUTES.ADMIN_DASHBOARD} className="flex items-center gap-2 px-4 py-2 text-sm text-[#0A1628] hover:bg-gray-50">
                         <Settings size={15} /> Admin Panel
@@ -231,6 +236,11 @@ export default function Navbar() {
                   <Link to={ROUTES.PROFILE} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[#0A1628] hover:bg-gray-50">
                     <User size={15} /> Profile
                   </Link>
+                  {profile?.role === 'vendor' && (
+                    <Link to={ROUTES.VENDOR_DASHBOARD} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[#0A1628] hover:bg-gray-50">
+                      <Store size={15} /> Vendor Portal
+                    </Link>
+                  )}
                   <button
                     onClick={logout}
                     className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-red-600 hover:bg-red-50 w-full"

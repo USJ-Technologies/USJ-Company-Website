@@ -1,31 +1,18 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import {
-  LayoutDashboard, Package, MessageSquare,
-  Building2, Award, Menu, X, LogOut, ChevronRight, Users, Shield, Briefcase, BookOpen, BarChart2,
+  LayoutDashboard, Package, ShoppingCart, Menu, X, LogOut, ChevronRight,
 } from 'lucide-react';
 import { ROUTES } from '../../config/app';
 import useAuthStore from '../../store/authStore';
 
-const ALL_NAV_ITEMS = [
-  { label: 'Dashboard',      to: ROUTES.ADMIN_DASHBOARD,      icon: LayoutDashboard, roles: ['admin', 'manager', 'staff'] },
-  { label: 'Inquiries',      to: ROUTES.ADMIN_INQUIRIES,      icon: MessageSquare,   roles: ['admin', 'manager', 'staff'] },
-  { label: 'Products',       to: ROUTES.ADMIN_PRODUCTS,       icon: Package,         roles: ['admin', 'manager'] },
-  { label: 'Analytics',      to: ROUTES.ADMIN_ANALYTICS,      icon: BarChart2,       roles: ['admin', 'manager'] },
-  { label: 'Reviews',        to: ROUTES.ADMIN_REVIEWS,        icon: MessageSquare,   roles: ['admin', 'manager'] },
-  { label: 'Certifications', to: ROUTES.ADMIN_CERTIFICATIONS, icon: Award,           roles: ['admin', 'manager'] },
-  { label: 'Careers',        to: ROUTES.ADMIN_CAREERS,        icon: Briefcase,       roles: ['admin', 'manager'] },
-  { label: 'Blog',           to: ROUTES.ADMIN_BLOG,           icon: BookOpen,        roles: ['admin', 'manager'] },
-  { label: 'Vendors',        to: ROUTES.ADMIN_VENDORS,        icon: Building2,       roles: ['admin', 'manager'] },
-  { label: 'Team',           to: ROUTES.ADMIN_TEAM,           icon: Users,           roles: ['admin'] },
-  { label: 'Ventures',       to: ROUTES.ADMIN_VENTURES,       icon: Building2,       roles: ['admin'] },
-  { label: 'Access Control', to: ROUTES.ADMIN_ACCESS_CONTROL, icon: Shield,          roles: ['admin'] },
+const VENDOR_NAV_ITEMS = [
+  { label: 'Dashboard', to: ROUTES.VENDOR_DASHBOARD, icon: LayoutDashboard },
+  { label: 'Products', to: ROUTES.VENDOR_PRODUCTS, icon: Package },
+  { label: 'Orders', to: ROUTES.VENDOR_ORDERS, icon: ShoppingCart },
 ];
 
-const ROLE_LABEL = { admin: 'Admin', manager: 'Manager', staff: 'Staff' };
-
-// Sidebar must be defined OUTSIDE AdminLayout to prevent remount on every render
-function Sidebar({ user, navItems, onClose }) {
+function Sidebar({ user, onClose }) {
   const location = useLocation();
   const { logout } = useAuthStore();
   const isActive = (to) => location.pathname === to || location.pathname.startsWith(to + '/');
@@ -35,13 +22,13 @@ function Sidebar({ user, navItems, onClose }) {
       <div className="px-5 py-5 border-b" style={{ borderColor: '#1A2E4A' }}>
         <Link to={ROUTES.HOME} className="block" onClick={onClose}>
           <span className="text-lg font-bold text-white">USJ</span>
-          <span className="text-lg font-bold text-[#C9A84C]"> Admin</span>
+          <span className="text-lg font-bold text-[#C9A84C]"> Seller</span>
         </Link>
-        <p className="text-xs text-[#4A5568] mt-0.5">Management Panel</p>
+        <p className="text-xs text-[#4A5568] mt-0.5">Your Store</p>
       </div>
 
       <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
-        {navItems.map(({ label, to, icon: Icon }) => (
+        {VENDOR_NAV_ITEMS.map(({ label, to, icon: Icon }) => (
           <Link
             key={to}
             to={to}
@@ -61,15 +48,15 @@ function Sidebar({ user, navItems, onClose }) {
 
       <div className="px-3 py-4 border-t" style={{ borderColor: '#1A2E4A' }}>
         <div className="flex items-center gap-2 px-3 mb-3">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-            style={{ backgroundColor: '#C9A84C', color: '#0A1628' }}>
-            {user?.name?.[0] || 'A'}
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+            style={{ backgroundColor: '#C9A84C', color: '#0A1628' }}
+          >
+            {user?.name?.[0] || 'V'}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-white truncate">{user?.name || 'Admin'}</p>
-            <p className="text-xs text-[#4A5568] truncate">
-              {ROLE_LABEL[user?.role] ?? 'Admin'} · {user?.email}
-            </p>
+            <p className="text-sm font-medium text-white truncate">{user?.name || 'Vendor'}</p>
+            <p className="text-xs text-[#4A5568] truncate">Seller · {user?.email}</p>
           </div>
         </div>
         <button
@@ -83,27 +70,22 @@ function Sidebar({ user, navItems, onClose }) {
   );
 }
 
-export default function AdminLayout() {
+export default function VendorLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const { user, profile } = useAuthStore();
 
-  const role = profile?.role ?? 'admin';
-  const navItems = ALL_NAV_ITEMS.filter((item) => item.roles.includes(role));
-
-  // Use ALL_NAV_ITEMS for title detection (works even for pages not in filtered nav)
-  const currentPage = ALL_NAV_ITEMS.find(
+  const currentPage = VENDOR_NAV_ITEMS.find(
     (n) => location.pathname === n.to || location.pathname.startsWith(n.to + '/')
   );
 
-  // Merge user + profile for sidebar display
-  const sidebarUser = { ...user, role, name: profile?.name ?? user?.email };
+  const sidebarUser = { ...user, name: profile?.name ?? user?.email };
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F8F9FA]">
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex shrink-0">
-        <Sidebar user={sidebarUser} navItems={navItems} onClose={undefined} />
+        <Sidebar user={sidebarUser} onClose={undefined} />
       </div>
 
       {/* Mobile Sidebar Overlay */}
@@ -111,7 +93,7 @@ export default function AdminLayout() {
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
           <div className="absolute left-0 top-0 bottom-0">
-            <Sidebar user={sidebarUser} navItems={navItems} onClose={() => setSidebarOpen(false)} />
+            <Sidebar user={sidebarUser} onClose={() => setSidebarOpen(false)} />
           </div>
         </div>
       )}
@@ -132,7 +114,7 @@ export default function AdminLayout() {
               <Menu size={20} />
             </button>
             <h1 className="text-lg font-semibold text-[#0A1628]">
-              {currentPage?.label || 'Admin Panel'}
+              {currentPage?.label || 'Vendor Dashboard'}
             </h1>
           </div>
 
@@ -149,14 +131,16 @@ export default function AdminLayout() {
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
               style={{ backgroundColor: '#C9A84C', color: '#0A1628' }}
             >
-              {profile?.name?.[0] || 'A'}
+              {sidebarUser?.name?.[0] || 'V'}
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

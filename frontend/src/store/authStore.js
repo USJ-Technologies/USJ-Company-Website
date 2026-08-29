@@ -110,6 +110,8 @@ const useAuthStore = create((set, get) => ({
 
   isAdmin: () => get().profile?.role === 'admin',
   hasRole: (...roles) => roles.includes(get().profile?.role),
+  isVendor: () => get().profile?.role === 'vendor',
+  getVendorId: () => get().profile?.vendor_id || null,
 }));
 
 export default useAuthStore;

@@ -4,6 +4,100 @@ All completed development work across sessions. Most recent changes at top.
 
 ---
 
+## Session 7 — 2026-08-29
+
+### Multi-Vendor Marketplace Build — Phases 4 & 6
+
+#### Phase 4 — Storefront-Facing Changes (100% Complete)
+
+**Objectives:**
+Show vendor information on product detail pages and enable public vendor storefronts.
+
+**Changes:**
+
+1. **Database Query Enhancement (queries.js)**
+   - Modified `getProductBySlug()` to include vendor info via left join: `select('*, vendors(id, business_name, slug, logo_url)')`
+   - Vendor data now included in product response
+
+2. **Product Detail Page (ProductDetailPage.jsx)**
+   - Added "Sold by [Vendor Name]" badge/link
+   - Badge displays vendor logo (if available), vendor name, and chevron icon
+   - Linked to `/store/[vendor-slug]` (new vendor storefront route)
+   - Badge appears below product model info, before pricing/description
+   - Handles both vendor-owned products and platform-owned products (null vendor_id)
+
+3. **New Vendor Storefront Page (VendorStorefrontPage.jsx)**
+   - Route: `/store/:slug` (public, no authentication required)
+   - Features:
+     - Vendor header with logo, business_name, storefront_description, contact info (email/phone)
+     - Product grid/list view toggle
+     - Search by product name/SKU
+     - Pagination (20 products per page)
+     - Only shows products where `vendor_id = vendor.id AND is_active = true AND vendor.status = 'approved'`
+   - UI follows existing design system (dark theme, gold accents, responsive layout)
+   - SEO: Includes SEOHead component with canonical URL
+
+4. **Routing & Navigation (App.jsx)**
+   - Added `VendorStorefrontPage` import
+   - Added route: `<Route path="/store/:slug" element={<VendorStorefrontPage />} />`
+
+5. **SEO & Crawlability (robots.txt)**
+   - Updated to allow `/store/` paths for public indexing
+   - Blocked `/vendor/` (seller dashboard) from crawling
+   - Added `Allow: /become-a-seller` for public visibility
+
+**Note on Sitemaps:**
+- `sitemap.xml` currently manually maintained
+- Recommend: Create dynamic sitemap generation script that includes:
+  - Approved vendors' `/store/[slug]` URLs (static, changeable on vendor.updated_at)
+  - Could be run nightly via cron or triggered on vendor approval/update
+- Vendor sitemaps can be manually added later or built into deployment pipeline
+
+#### Phase 6 — Compliance (100% Complete)
+
+**Objectives:**
+Establish marketplace seller agreement and ensure terms are acknowledged by vendors.
+
+**Changes:**
+
+1. **Seller Agreement Page (SellerTermsPage.jsx)**
+   - Route: `/seller-terms` (public)
+   - Comprehensive T&Cs covering:
+     - Introduction & platform nature (marketplace, not direct seller)
+     - Seller eligibility: GST, PAN, KYC requirements
+     - Seller account lifecycle: Pending → Approved → Suspended/Rejected
+     - Seller responsibilities: Product listings, order fulfillment, prohibited items
+     - Payment & commission structure (currently 0% commission, noted as subject to change with 30 days notice)
+     - Payout policy: 5-7 business days, GST/TDS deductions apply
+     - Seller conduct: Code of conduct, IP warranty, performance standards
+     - Returns/disputes: 7-day return window, 48-hour response SLA
+     - Termination clauses: Violations, fraud, performance issues
+     - Liability limitations per Indian law
+     - Dispute resolution: Platform mediation → arbitration under 1996 Act
+     - Contact info: sellers@usjtechnologies.com
+   - UI: Polished, long-form document layout with sections, TOC implicit via headers
+   - Includes CTA "Start Selling" link back to `/become-a-seller`
+
+2. **Terms Acceptance (BecomeSellerPage.jsx)**
+   - Added "I agree to Seller Agreement & Marketplace Terms" checkbox
+   - Checkbox is mandatory — submit button disabled until checked
+   - Link in checkbox text points to `/seller-terms` (opens in new tab)
+   - Validation: `agreedToTerms` checked, error shown if unchecked on submit
+   - Compliant with marketplace policies
+
+3. **Routing (App.jsx)**
+   - Added `SellerTermsPage` import
+   - Added route: `<Route path="/seller-terms" element={<SellerTermsPage />} />`
+   - Publicly accessible (no authentication required)
+
+**Compliance Notes:**
+- GST/TCS withholding: Flagged for Phase 5 (payment settlement) — not built here
+- Invoice templates: To be updated in Phase 5 when payment splitting is live
+- Payout calculations: Currently placeholder (0% commission); Phase 5 to implement actual settlement
+- Bank details: Already collected in BecomeSellerPage; stored in `contact_info.bank_*` fields; ready for Phase 5 integration
+
+---
+
 ## Session 6 — 2026-06-17
 
 ### Features Added / Fixed

@@ -344,6 +344,26 @@ export default function ProductDetailPage() {
                   </p>
                 )}
 
+                {/* Vendor Info */}
+                {product.vendors && (
+                  <Link
+                    to={`/store/${product.vendors.slug}`}
+                    className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 bg-[#F8F9FA] hover:bg-[#EBF0F5] border border-[#E2E8F0] rounded-[6px] transition-colors"
+                  >
+                    {product.vendors.logo_url && (
+                      <img
+                        src={product.vendors.logo_url}
+                        alt={product.vendors.business_name}
+                        className="w-5 h-5 object-contain"
+                      />
+                    )}
+                    <span className="text-xs font-semibold text-[#0A1628]">
+                      Sold by {product.vendors.business_name}
+                    </span>
+                    <ChevronRight size={14} className="text-[#718096]" />
+                  </Link>
+                )}
+
                 {/* Price */}
                 <div className="mb-4 pb-4 border-b border-[#E2E8F0]">
                   {product.unit_price != null ? (

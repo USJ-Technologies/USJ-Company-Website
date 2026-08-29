@@ -11,8 +11,9 @@ const quickLinks = [
   { label: 'Blog', to: ROUTES.BLOG },
   { label: 'Certifications', to: ROUTES.CERTIFICATIONS },
   { label: 'Projects', to: ROUTES.PROJECTS },
-  { label: 'Contact', to: ROUTES.CONTACT },
   { label: 'Careers', to: ROUTES.CAREERS },
+  { label: 'Become a Seller', to: ROUTES.BECOME_SELLER },
+  { label: 'Contact', to: ROUTES.CONTACT },
 ];
 
 const legal = [

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Package, SlidersHorizontal, X, Sparkles, Search } from 'lucide-react';
 import SEOHead from '../components/seo/SEOHead';
 import ProductCard from '../components/shop/ProductCard';
@@ -261,11 +261,27 @@ export default function ShopPage() {
       />
       {/* Page header */}
       <section className="py-8 bg-white border-b border-[#E2E8F0]">
-        <div className="container-max">
-          <h1 className="text-2xl md:text-3xl font-bold text-[#0A1628] mb-1">Shop Products</h1>
-          <p className="text-sm text-[#718096]">
-            Quality technology products for government, defence, and commercial buyers
-          </p>
+        <div className="container-max flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-[#0A1628] mb-1">Shop Products</h1>
+            <p className="text-sm text-[#718096]">
+              Quality technology products for government, defence, and commercial buyers
+            </p>
+          </div>
+          
+          {/* Become a Seller Banner */}
+          <div className="bg-[#F8F9FA] border border-[#E2E8F0] rounded-[8px] p-4 flex items-center justify-between gap-6 sm:w-auto w-full">
+             <div>
+               <h3 className="text-sm font-bold text-[#0A1628]">Sell on USJ Marketplace</h3>
+               <p className="text-xs text-[#718096]">Reach thousands of B2B and government buyers.</p>
+             </div>
+             <Link
+               to="/become-a-seller"
+               className="shrink-0 px-5 py-2 bg-[#0A1628] text-white text-sm font-semibold rounded-[6px] hover:bg-[#1A2E4A] transition-colors"
+             >
+               Become a Seller
+             </Link>
+          </div>
         </div>
       </section>
 
@@ -334,14 +350,16 @@ export default function ShopPage() {
       {showMobileFilters && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowMobileFilters(false)} />
-          <div className="absolute right-0 top-0 bottom-0 w-72 bg-white p-6 overflow-y-auto shadow-xl">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-bold text-[#0A1628]">Filters</h3>
-              <button onClick={() => setShowMobileFilters(false)}>
-                <X size={20} className="text-gray-500" />
-              </button>
+          <div className="absolute right-0 top-0 bottom-0 w-72 bg-white p-6 overflow-y-auto shadow-xl flex flex-col">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-bold text-[#0A1628]">Filters</h3>
+                <button onClick={() => setShowMobileFilters(false)}>
+                  <X size={20} className="text-gray-500" />
+                </button>
+              </div>
+              <FilterPanel {...filterProps} />
             </div>
-            <FilterPanel {...filterProps} />
           </div>
         </div>
       )}
@@ -351,9 +369,11 @@ export default function ShopPage() {
           <div className="flex gap-8">
             {/* Desktop sidebar */}
             <aside className="hidden lg:block w-56 flex-shrink-0">
-              <div className="bg-white rounded-[8px] border border-[#E2E8F0] p-5 sticky top-24">
-                <h3 className="font-bold text-sm text-[#0A1628] mb-4">Filters</h3>
-                <FilterPanel {...filterProps} />
+              <div className="sticky top-24 space-y-4">
+                <div className="bg-white rounded-[8px] border border-[#E2E8F0] p-5">
+                  <h3 className="font-bold text-sm text-[#0A1628] mb-4">Filters</h3>
+                  <FilterPanel {...filterProps} />
+                </div>
               </div>
             </aside>
 

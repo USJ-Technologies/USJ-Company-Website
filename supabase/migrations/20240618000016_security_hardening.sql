@@ -29,8 +29,14 @@
 CREATE OR REPLACE FUNCTION public.prevent_role_self_escalation()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  IF NEW.role IS DISTINCT FROM OLD.role AND NOT is_admin() THEN
-    RAISE EXCEPTION 'Only admins can change a profile''s role';
+  IF NEW.role IS DISTINCT FROM OLD.role THEN
+    IF is_admin() THEN
+      RETURN NEW;
+    ELSIF is_manager_or_above() AND NEW.role IN ('vendor', 'customer') AND OLD.role IN ('vendor', 'customer') THEN
+      RETURN NEW;
+    ELSE
+      RAISE EXCEPTION 'You do not have permission to assign this role.';
+    END IF;
   END IF;
   RETURN NEW;
 END;
@@ -48,7 +54,7 @@ DROP POLICY IF EXISTS "auth_delete_product_images_storage" ON storage.objects;
 
 CREATE POLICY "manager_upload_product_images_storage"
 ON storage.objects FOR INSERT TO authenticated
-WITH CHECK (bucket_id = 'product-images' AND is_manager_or_above());
+WITH CHECK (bucket_id = 'product-images' AND (is_manager_or_above() OR is_approved_vendor()));
 
 CREATE POLICY "manager_update_product_images_storage"
 ON storage.objects FOR UPDATE TO authenticated

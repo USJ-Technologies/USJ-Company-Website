@@ -1,8 +1,9 @@
 User-agent: *
 Allow: /
 
-# Block admin and auth pages from indexing
+# Block admin, vendor dashboard, and auth pages from indexing
 Disallow: /admin/
+Disallow: /vendor/
 Disallow: /profile
 Disallow: /orders
 Disallow: /cart
@@ -14,6 +15,7 @@ Disallow: /register
 # Allow important public paths explicitly
 Allow: /shop
 Allow: /product/
+Allow: /store/
 Allow: /about
 Allow: /services
 Allow: /contact
@@ -21,5 +23,6 @@ Allow: /certifications
 Allow: /ventures
 Allow: /careers
 Allow: /projects
+Allow: /become-a-seller
 
 Sitemap: https://www.usjtechnologies.com/sitemap.xml
