@@ -39,7 +39,7 @@ const useAuthStore = create((set, get) => ({
     set({ profile, isLoading: false });
   },
 
-  login: async ({ email, password }) => {
+  login: async ({ email, password, accountType = 'customer' }) => {
     set({ isLoading: true });
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
@@ -47,8 +47,66 @@ const useAuthStore = create((set, get) => ({
       toast.error(error.message);
       return { success: false, message: error.message };
     }
-    toast.success(`Welcome back!`);
-    return { success: true };
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError) {
+      await supabase.auth.signOut();
+      set({
+        user: null,
+        session: null,
+        profile: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+      toast.error('Could not load account profile');
+      return { success: false, message: 'Could not load account profile' };
+    }
+
+    const roleMatches = (() => {
+      switch (accountType) {
+        case 'vendor':
+          return profile.role === 'vendor';
+        case 'employee':
+          return ['admin', 'manager', 'staff'].includes(profile.role);
+        case 'customer':
+        default:
+          return profile.role === 'customer';
+      }
+    })();
+
+    if (!roleMatches) {
+      await supabase.auth.signOut();
+      set({
+        user: null,
+        session: null,
+        profile: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+
+      const messages = {
+        customer: 'This account is not registered as a customer.',
+        vendor: 'This account is not registered as a vendor.',
+        employee: 'This account does not have employee access.',
+      };
+      toast.error(messages[accountType] || messages.customer);
+      return { success: false, message: messages[accountType] };
+    }
+
+    set({
+      user: data.user,
+      session: data.session,
+      profile,
+      isAuthenticated: true,
+      isLoading: false,
+    });
+    toast.success('Welcome back!');
+    return { success: true, accountType };
   },
 
   register: async ({ name, email, password, phone, organization }) => {

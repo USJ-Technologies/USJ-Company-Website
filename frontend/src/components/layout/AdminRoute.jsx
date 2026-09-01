@@ -10,7 +10,7 @@ const AdminRoute = ({ children }) => {
   }
 
   if (!isAuthenticated || !['admin', 'manager', 'staff'].includes(profile?.role)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login?type=employee" replace />;
   }
 
   return children;

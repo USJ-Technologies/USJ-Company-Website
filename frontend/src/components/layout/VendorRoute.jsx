@@ -10,7 +10,7 @@ const VendorRoute = ({ children }) => {
   }
 
   if (!isAuthenticated || profile?.role !== 'vendor') {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login?type=vendor" replace />;
   }
 
   // Optionally, also check if vendor is approved
