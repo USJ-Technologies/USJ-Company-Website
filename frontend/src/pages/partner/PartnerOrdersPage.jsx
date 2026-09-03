@@ -16,9 +16,9 @@ const STATUS_BADGE = {
 
 const PAGE_SIZE = 20;
 
-export default function VendorOrdersPage() {
+export default function PartnerOrdersPage() {
   const { profile } = useAuthStore();
-  const vendorId = profile?.vendor_id;
+  const partnerId = profile?.partner_id;
 
   const [orderItems, setOrderItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,12 +28,12 @@ export default function VendorOrdersPage() {
   const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
-    if (!vendorId) return;
+    if (!partnerId) return;
     fetchOrderItems();
-  }, [vendorId, statusFilter, currentPage]);
+  }, [partnerId, statusFilter, currentPage]);
 
   const fetchOrderItems = async () => {
-    if (!vendorId) return;
+    if (!partnerId) return;
     setLoading(true);
     try {
       let query = supabase
@@ -46,7 +46,7 @@ export default function VendorOrdersPage() {
           `,
           { count: 'exact' }
         )
-        .eq('vendor_id', vendorId);
+        .eq('partner_id', partnerId);
 
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
@@ -74,7 +74,7 @@ export default function VendorOrdersPage() {
         .from('order_items')
         .update({ status: newStatus })
         .eq('id', orderItemId)
-        .eq('vendor_id', vendorId);
+        .eq('partner_id', partnerId);
 
       if (error) throw error;
 

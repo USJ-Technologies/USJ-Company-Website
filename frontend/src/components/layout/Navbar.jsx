@@ -147,9 +147,9 @@ export default function Navbar() {
                     <Link to={ROUTES.ORDERS} className="flex items-center gap-2 px-4 py-2 text-sm text-[#0A1628] hover:bg-gray-50">
                       <Package size={15} /> My Orders
                     </Link>
-                    {profile?.role === 'vendor' && (
-                      <Link to={ROUTES.VENDOR_DASHBOARD} className="flex items-center gap-2 px-4 py-2 text-sm text-[#0A1628] hover:bg-gray-50">
-                        <Store size={15} /> Vendor Portal
+                    {profile?.role === 'usj_partner' && (
+                      <Link to={ROUTES.PARTNER_DASHBOARD} className="flex items-center gap-2 px-4 py-2 text-sm text-[#0A1628] hover:bg-gray-50">
+                        <Store size={15} /> USJ Partner Portal
                       </Link>
                     )}
                     {['admin', 'manager', 'staff'].includes(profile?.role) && (
@@ -236,9 +236,9 @@ export default function Navbar() {
                   <Link to={ROUTES.PROFILE} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[#0A1628] hover:bg-gray-50">
                     <User size={15} /> Profile
                   </Link>
-                  {profile?.role === 'vendor' && (
-                    <Link to={ROUTES.VENDOR_DASHBOARD} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[#0A1628] hover:bg-gray-50">
-                      <Store size={15} /> Vendor Portal
+                  {profile?.role === 'usj_partner' && (
+                    <Link to={ROUTES.PARTNER_DASHBOARD} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[#0A1628] hover:bg-gray-50">
+                      <Store size={15} /> USJ Partner Portal
                     </Link>
                   )}
                   <button

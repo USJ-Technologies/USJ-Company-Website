@@ -26,40 +26,40 @@ const BADGE_COLOR = {
   rejected: 'bg-gray-100 text-gray-800',
 };
 
-export default function VendorsAdminPage() {
-  const [vendors, setVendors] = useState([]);
+export default function PartnersAdminPage() {
+  const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedVendor, setSelectedVendor] = useState(null);
+  const [selectedPartner, setSelectedPartner] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [reviewNotes, setReviewNotes] = useState('');
-  const canManageVendors = useAuthStore((s) => s.hasRole('admin', 'manager'));
+  const canManagePartners = useAuthStore((s) => s.hasRole('admin', 'manager'));
 
   useEffect(() => {
-    if (canManageVendors) fetchVendors();
-  }, [canManageVendors]);
+    if (canManagePartners) fetchPartners();
+  }, [canManagePartners]);
 
-  const fetchVendors = async () => {
+  const fetchPartners = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('vendors')
+        .from('usj_partners')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setVendors(data ?? []);
+      setPartners(data ?? []);
     } catch (error) {
-      console.error('Error fetching vendors:', error);
-      toast.error('Failed to load vendors');
+      console.error('Error fetching USJ Partners:', error);
+      toast.error('Failed to load USJ Partners');
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredVendors = vendors.filter((v) => {
+  const filteredPartners = partners.filter((v) => {
     const matchesSearch =
       v.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       v.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -68,38 +68,38 @@ export default function VendorsAdminPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleApproveVendor = async (vendor) => {
-    if (!window.confirm(`Approve vendor "${vendor.business_name}"? This will grant them vendor access.`)) {
+  const handleApprovePartner = async (partner) => {
+    if (!window.confirm(`Approve USJ Partner "${partner.business_name}"? This will grant them USJ Partner access.`)) {
       return;
     }
 
     setActionLoading(true);
     try {
-      // 1. Update vendor status to 'approved'
-      const { error: vendorError } = await supabase
-        .from('vendors')
+      // 1. Update partner status to 'approved'
+      const { error: partnerError } = await supabase
+        .from('usj_partners')
         .update({ status: 'approved' })
-        .eq('id', vendor.id);
+        .eq('id', partner.id);
 
-      if (vendorError) throw vendorError;
+      if (partnerError) throw partnerError;
 
       // 2. Update local state
-      setVendors((prev) =>
-        prev.map((v) => (v.id === vendor.id ? { ...v, status: 'approved' } : v))
+      setPartners((prev) =>
+        prev.map((v) => (v.id === partner.id ? { ...v, status: 'approved' } : v))
       );
 
       setShowDetailModal(false);
-      setSelectedVendor(null);
-      toast.success(`Vendor "${vendor.business_name}" approved!`);
+      setSelectedPartner(null);
+      toast.success(`USJ Partner "${partner.business_name}" approved!`);
     } catch (error) {
-      console.error('Error approving vendor:', error);
-      toast.error('Failed to approve vendor');
+      console.error('Error approving USJ Partner:', error);
+      toast.error('Failed to approve USJ Partner');
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleRejectVendor = async (vendor, reason) => {
+  const handleRejectPartner = async (partner, reason) => {
     if (!reason.trim()) {
       toast.error('Please provide a reason for rejection');
       return;
@@ -107,7 +107,7 @@ export default function VendorsAdminPage() {
 
     if (
       !window.confirm(
-        `Reject vendor "${vendor.business_name}"? They will be notified and can reapply.`
+        `Reject USJ Partner "${partner.business_name}"? They will be notified and can reapply.`
       )
     ) {
       return;
@@ -115,67 +115,67 @@ export default function VendorsAdminPage() {
 
     setActionLoading(true);
     try {
-      // 1. Update vendor status to 'rejected'
-      const { error: vendorError } = await supabase
-        .from('vendors')
+      // 1. Update partner status to 'rejected'
+      const { error: partnerError } = await supabase
+        .from('usj_partners')
         .update({
           status: 'rejected',
           contact_info: {
-            ...vendor.contact_info,
+            ...partner.contact_info,
             rejection_reason: reason,
           },
         })
-        .eq('id', vendor.id);
+        .eq('id', partner.id);
 
-      if (vendorError) throw vendorError;
+      if (partnerError) throw partnerError;
 
       // 2. Update local state
-      setVendors((prev) =>
-        prev.map((v) => (v.id === vendor.id ? { ...v, status: 'rejected' } : v))
+      setPartners((prev) =>
+        prev.map((v) => (v.id === partner.id ? { ...v, status: 'rejected' } : v))
       );
 
       setShowDetailModal(false);
-      setSelectedVendor(null);
+      setSelectedPartner(null);
       setReviewNotes('');
-      toast.success(`Vendor "${vendor.business_name}" rejected`);
+      toast.success(`USJ Partner "${partner.business_name}" rejected`);
     } catch (error) {
-      console.error('Error rejecting vendor:', error);
-      toast.error('Failed to reject vendor');
+      console.error('Error rejecting USJ Partner:', error);
+      toast.error('Failed to reject USJ Partner');
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleSuspendVendor = async (vendor) => {
-    if (!window.confirm(`Suspend vendor "${vendor.business_name}"?`)) {
+  const handleSuspendPartner = async (partner) => {
+    if (!window.confirm(`Suspend USJ Partner "${partner.business_name}"?`)) {
       return;
     }
 
     setActionLoading(true);
     try {
       const { error } = await supabase
-        .from('vendors')
+        .from('usj_partners')
         .update({ status: 'suspended' })
-        .eq('id', vendor.id);
+        .eq('id', partner.id);
 
       if (error) throw error;
 
-      setVendors((prev) =>
-        prev.map((v) => (v.id === vendor.id ? { ...v, status: 'suspended' } : v))
+      setPartners((prev) =>
+        prev.map((v) => (v.id === partner.id ? { ...v, status: 'suspended' } : v))
       );
 
       setShowDetailModal(false);
-      setSelectedVendor(null);
-      toast.success(`Vendor "${vendor.business_name}" suspended`);
+      setSelectedPartner(null);
+      toast.success(`USJ Partner "${partner.business_name}" suspended`);
     } catch (error) {
-      console.error('Error suspending vendor:', error);
-      toast.error('Failed to suspend vendor');
+      console.error('Error suspending USJ Partner:', error);
+      toast.error('Failed to suspend USJ Partner');
     } finally {
       setActionLoading(false);
     }
   };
 
-  if (!canManageVendors) {
+  if (!canManagePartners) {
     return (
       <div className="bg-white rounded-xl border border-[#E2E8F0] p-8 text-center">
         <AlertCircle size={32} className="mx-auto text-gray-300 mb-3" />
@@ -189,8 +189,8 @@ export default function VendorsAdminPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0A1628]">Vendor Management</h1>
-          <p className="text-sm text-[#718096] mt-0.5">Review and approve vendor applications</p>
+          <h1 className="text-2xl font-bold text-[#0A1628]">USJ Partner Management</h1>
+          <p className="text-sm text-[#718096] mt-0.5">Review and approve USJ Partner applications</p>
         </div>
       </div>
 
@@ -222,51 +222,51 @@ export default function VendorsAdminPage() {
         </select>
       </div>
 
-      {/* Vendors List */}
+      {/* USJ Partners List */}
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
         </div>
-      ) : filteredVendors.length === 0 ? (
+      ) : filteredPartners.length === 0 ? (
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-12 text-center">
           <Building2 size={40} className="mx-auto text-gray-300 mb-3" />
-          <p className="text-sm font-semibold text-[#0A1628]">No vendors found</p>
+          <p className="text-sm font-semibold text-[#0A1628]">No partners found</p>
           <p className="text-xs text-[#718096] mt-1">
             {searchTerm ? 'Try adjusting your search' : 'Check back later for new applications'}
           </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredVendors.map((vendor) => (
+          {filteredPartners.map((partner) => (
             <div
-              key={vendor.id}
+              key={partner.id}
               className="bg-white rounded-xl border border-[#E2E8F0] p-4 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-sm font-bold text-[#0A1628]">{vendor.business_name}</h3>
-                    <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${BADGE_COLOR[vendor.status]}`}>
-                      {vendor.status.charAt(0).toUpperCase() + vendor.status.slice(1)}
+                    <h3 className="text-sm font-bold text-[#0A1628]">{partner.business_name}</h3>
+                    <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${BADGE_COLOR[partner.status]}`}>
+                      {partner.status.charAt(0).toUpperCase() + partner.status.slice(1)}
                     </span>
                   </div>
                   <p className="text-xs text-[#718096] mb-3">
-                    GST: {vendor.gst_number} • PAN: {vendor.pan_number}
+                    GST: {partner.gst_number} • PAN: {partner.pan_number}
                   </p>
                   <div className="flex items-center gap-4 text-xs text-[#718096]">
                     <div className="flex items-center gap-1">
                       <Mail size={12} />
-                      {vendor.contact_info?.email}
+                      {partner.contact_info?.email}
                     </div>
                     <div className="flex items-center gap-1">
                       <Phone size={12} />
-                      {vendor.contact_info?.phone}
+                      {partner.contact_info?.phone}
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar size={12} />
-                      {new Date(vendor.created_at).toLocaleDateString()}
+                      {new Date(partner.created_at).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
@@ -274,7 +274,7 @@ export default function VendorsAdminPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
-                      setSelectedVendor(vendor);
+                      setSelectedPartner(partner);
                       setShowDetailModal(true);
                     }}
                     className="p-2 text-[#718096] hover:text-[#0A1628] hover:bg-[#F7FAFC] rounded-[6px] transition-colors"
@@ -289,15 +289,15 @@ export default function VendorsAdminPage() {
       )}
 
       {/* Detail Modal */}
-      {showDetailModal && selectedVendor && (
+      {showDetailModal && selectedPartner && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-[#E2E8F0] p-6 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-[#0A1628]">{selectedVendor.business_name}</h2>
+              <h2 className="text-lg font-bold text-[#0A1628]">{selectedPartner.business_name}</h2>
               <button
                 onClick={() => {
                   setShowDetailModal(false);
-                  setSelectedVendor(null);
+                  setSelectedPartner(null);
                   setReviewNotes('');
                 }}
                 className="text-[#718096] hover:text-[#0A1628]"
@@ -315,23 +315,23 @@ export default function VendorsAdminPage() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-xs font-semibold text-[#718096]">Business Name</p>
-                    <p className="text-[#0A1628]">{selectedVendor.business_name}</p>
+                    <p className="text-[#0A1628]">{selectedPartner.business_name}</p>
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-[#718096]">Status</p>
                     <div className="mt-1">
-                      <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${BADGE_COLOR[selectedVendor.status]}`}>
-                        {selectedVendor.status.charAt(0).toUpperCase() + selectedVendor.status.slice(1)}
+                      <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${BADGE_COLOR[selectedPartner.status]}`}>
+                        {selectedPartner.status.charAt(0).toUpperCase() + selectedPartner.status.slice(1)}
                       </span>
                     </div>
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-[#718096]">GST Number</p>
-                    <p className="text-[#0A1628] font-mono">{selectedVendor.gst_number}</p>
+                    <p className="text-[#0A1628] font-mono">{selectedPartner.gst_number}</p>
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-[#718096]">PAN Number</p>
-                    <p className="text-[#0A1628] font-mono">{selectedVendor.pan_number}</p>
+                    <p className="text-[#0A1628] font-mono">{selectedPartner.pan_number}</p>
                   </div>
                 </div>
               </div>
@@ -344,15 +344,15 @@ export default function VendorsAdminPage() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-xs font-semibold text-[#718096]">Contact Person</p>
-                    <p className="text-[#0A1628]">{selectedVendor.contact_info?.contact_person}</p>
+                    <p className="text-[#0A1628]">{selectedPartner.contact_info?.contact_person}</p>
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-[#718096]">Phone</p>
-                    <p className="text-[#0A1628]">{selectedVendor.contact_info?.phone}</p>
+                    <p className="text-[#0A1628]">{selectedPartner.contact_info?.phone}</p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-xs font-semibold text-[#718096]">Email</p>
-                    <p className="text-[#0A1628]">{selectedVendor.contact_info?.email}</p>
+                    <p className="text-[#0A1628]">{selectedPartner.contact_info?.email}</p>
                   </div>
                 </div>
               </div>
@@ -362,7 +362,7 @@ export default function VendorsAdminPage() {
                 <h3 className="text-sm font-bold text-[#0A1628] mb-3 uppercase tracking-wider">
                   Storefront Description
                 </h3>
-                <p className="text-sm text-[#4A5568]">{selectedVendor.storefront_description}</p>
+                <p className="text-sm text-[#4A5568]">{selectedPartner.storefront_description}</p>
               </div>
 
               {/* KYC Documents */}
@@ -370,9 +370,9 @@ export default function VendorsAdminPage() {
                 <h3 className="text-sm font-bold text-[#0A1628] mb-3 uppercase tracking-wider">
                   KYC Documents
                 </h3>
-                {selectedVendor.kyc_document_urls?.length > 0 ? (
+                {selectedPartner.kyc_document_urls?.length > 0 ? (
                   <div className="space-y-2">
-                    {selectedVendor.kyc_document_urls.map((url, i) => (
+                    {selectedPartner.kyc_document_urls.map((url, i) => (
                       <a
                         key={i}
                         href={url}
@@ -391,7 +391,7 @@ export default function VendorsAdminPage() {
               </div>
 
               {/* Review Notes (for approval/rejection) */}
-              {selectedVendor.status === 'pending' && (
+              {selectedPartner.status === 'pending' && (
                 <div>
                   <h3 className="text-sm font-bold text-[#0A1628] mb-3 uppercase tracking-wider">
                     Review Notes
@@ -407,10 +407,10 @@ export default function VendorsAdminPage() {
               )}
 
               {/* Action Buttons */}
-              {selectedVendor.status === 'pending' && (
+              {selectedPartner.status === 'pending' && (
                 <div className="flex gap-3">
                   <button
-                    onClick={() => handleApproveVendor(selectedVendor)}
+                    onClick={() => handleApprovePartner(selectedPartner)}
                     disabled={actionLoading}
                     className="flex-1 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-[6px] hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
@@ -418,7 +418,7 @@ export default function VendorsAdminPage() {
                     Approve
                   </button>
                   <button
-                    onClick={() => handleRejectVendor(selectedVendor, reviewNotes)}
+                    onClick={() => handleRejectPartner(selectedPartner, reviewNotes)}
                     disabled={actionLoading || !reviewNotes.trim()}
                     className="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-[6px] hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
@@ -428,13 +428,13 @@ export default function VendorsAdminPage() {
                 </div>
               )}
 
-              {selectedVendor.status === 'approved' && (
+              {selectedPartner.status === 'approved' && (
                 <button
-                  onClick={() => handleSuspendVendor(selectedVendor)}
+                  onClick={() => handleSuspendPartner(selectedPartner)}
                   disabled={actionLoading}
                   className="w-full px-4 py-2 bg-orange-600 text-white text-sm font-semibold rounded-[6px] hover:bg-orange-700 transition-colors disabled:opacity-50"
                 >
-                  {actionLoading ? <Loader size={16} className="animate-spin" /> : 'Suspend Vendor'}
+                  {actionLoading ? <Loader size={16} className="animate-spin" /> : 'Suspend USJ Partner'}
                 </button>
               )}
             </div>

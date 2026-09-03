@@ -3,15 +3,16 @@ import useAuthStore from './store/authStore';
 import useCartStore from './store/cartStore';
 import { getCartFromDb } from './lib/queries';
 import { trackSessionEndBeacon } from './lib/analytics';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 
 // Layouts & Wrappers
 import Layout from './components/layout/Layout';
 import AdminLayout from './components/layout/AdminLayout';
-import VendorLayout from './components/layout/VendorLayout';
+import PartnerLayout from './components/layout/PartnerLayout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import AdminRoute from './components/layout/AdminRoute';
-import VendorRoute from './components/layout/VendorRoute';
+import PartnerRoute from './components/layout/PartnerRoute';
+import ScrollToTop from './components/layout/ScrollToTop';
 import ContactCaptureModal from './components/shop/ContactCaptureModal';
 
 // Public Pages
@@ -33,7 +34,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import WishlistPage from './pages/WishlistPage';
 import BecomeSellerPage from './pages/BecomeSellerPage';
-import VendorStorefrontPage from './pages/VendorStorefrontPage';
+import PartnerStorefrontPage from './pages/PartnerStorefrontPage';
 import SellerTermsPage from './pages/SellerTermsPage';
 
 // Protected User Pages
@@ -53,13 +54,21 @@ import CareersAdminPage from './pages/admin/CareersAdminPage';
 import BlogAdminPage from './pages/admin/BlogAdminPage';
 import ReviewsAdminPage from './pages/admin/ReviewsAdminPage';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
-import VendorsAdminPage from './pages/admin/VendorsAdminPage';
+import PartnersAdminPage from './pages/admin/PartnersAdminPage';
 
-// Vendor Pages
-import VendorDashboardPage from './pages/vendor/VendorDashboardPage';
-import VendorProductsPage from './pages/vendor/VendorProductsPage';
-import VendorOrdersPage from './pages/vendor/VendorOrdersPage';
-import VendorAddProductPage from './pages/vendor/VendorAddProductPage';
+// USJ Partner Pages
+import PartnerDashboardPage from './pages/partner/PartnerDashboardPage';
+import PartnerProductsPage from './pages/partner/PartnerProductsPage';
+import PartnerOrdersPage from './pages/partner/PartnerOrdersPage';
+import PartnerAddProductPage from './pages/partner/PartnerAddProductPage';
+
+// Redirects legacy /vendor/* links to the equivalent /partner/* route,
+// preserving the sub-path, query string and hash.
+const LegacyVendorRedirect = () => {
+  const { pathname, search, hash } = useLocation();
+  const target = pathname.replace(/^\/vendor/, '/partner');
+  return <Navigate to={`${target}${search}${hash}`} replace />;
+};
 
 const App = () => {
   const { init, isAuthenticated } = useAuthStore();
@@ -108,6 +117,7 @@ useEffect(() => {
 
   return (
     <>
+      <ScrollToTop />
       <ContactCaptureModal />
       <Routes>
       {/* Public & user routes with standard Layout */}
@@ -126,7 +136,7 @@ useEffect(() => {
         <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/product/:slug" element={<ProductDetailPage />} />
         <Route path="/shop/product/:slug" element={<ProductDetailPage />} />
-        <Route path="/store/:slug" element={<VendorStorefrontPage />} />
+        <Route path="/store/:slug" element={<PartnerStorefrontPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/quote-request" element={<QuoteRequestPage />} />
         <Route path="/seller-terms" element={<SellerTermsPage />} />
@@ -151,22 +161,26 @@ useEffect(() => {
         <Route path="certifications" element={<CertificationsAdminPage />} />
         <Route path="team" element={<TeamAdminPage />} />
         <Route path="access-control" element={<AccessControlAdminPage />} />
-        <Route path="vendors" element={<VendorsAdminPage />} />
+        <Route path="partners" element={<PartnersAdminPage />} />
         <Route path="careers" element={<CareersAdminPage />} />
         <Route path="blog" element={<BlogAdminPage />} />
         <Route path="reviews" element={<ReviewsAdminPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
       </Route>
 
-      {/* Vendor routes */}
-      <Route path="/vendor" element={<VendorRoute><VendorLayout /></VendorRoute>}>
-        <Route index element={<VendorDashboardPage />} />
-        <Route path="dashboard" element={<VendorDashboardPage />} />
-        <Route path="products" element={<VendorProductsPage />} />
-        <Route path="products/new" element={<VendorAddProductPage />} />
-        <Route path="products/:productId" element={<VendorAddProductPage />} />
-        <Route path="orders" element={<VendorOrdersPage />} />
+      {/* USJ Partner routes */}
+      <Route path="/partner" element={<PartnerRoute><PartnerLayout /></PartnerRoute>}>
+        <Route index element={<PartnerDashboardPage />} />
+        <Route path="dashboard" element={<PartnerDashboardPage />} />
+        <Route path="products" element={<PartnerProductsPage />} />
+        <Route path="products/new" element={<PartnerAddProductPage />} />
+        <Route path="products/:productId" element={<PartnerAddProductPage />} />
+        <Route path="orders" element={<PartnerOrdersPage />} />
       </Route>
+
+      {/* Legacy /vendor/* and /admin/vendors URLs — keep old bookmarks working */}
+      <Route path="/vendor/*" element={<LegacyVendorRedirect />} />
+      <Route path="/admin/vendors" element={<Navigate to="/admin/partners" replace />} />
       </Routes>
     </>
   );

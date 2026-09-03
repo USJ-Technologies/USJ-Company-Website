@@ -2,6 +2,73 @@
 
 All completed development work across sessions. Most recent changes at top.
 
+> **Terminology note (Session 8, 2026-09-03):** what earlier entries call a
+> "vendor" is now called a **USJ Partner** throughout the product, code and
+> database. Historical entries below are left as originally written — the file
+> and symbol names they mention (`VendorStorefrontPage.jsx`, the `vendors`
+> table, `vendor_id`) were accurate at the time. See Session 8 for the mapping.
+
+---
+
+## Session 8 — 2026-09-03
+
+### Terminology Rename: "Vendor" → "USJ Partner"
+
+Full-stack rename of the marketplace seller concept. Applied across the
+database, edge functions, and frontend.
+
+**Mapping:**
+
+| Before | After |
+| --- | --- |
+| `vendors` table | `usj_partners` |
+| `profiles.vendor_id`, `products.vendor_id`, `order_items.vendor_id` | `partner_id` |
+| role value `'vendor'` | `'usj_partner'` |
+| `is_vendor()` | `is_usj_partner()` |
+| `is_approved_vendor()` | `is_approved_usj_partner()` |
+| `get_vendor_id()` | `get_partner_id()` |
+| `close_vendor_for_account_deletion()` | `close_usj_partner_for_account_deletion()` |
+| `vendor-kyc` bucket | `partner-kyc` (legacy bucket retained, read-only) |
+| `/vendor/*` routes | `/partner/*` |
+| `/admin/vendors` | `/admin/partners` |
+| `VendorLayout`, `VendorRoute`, `VendorStorefrontPage`, `VendorsAdminPage`, `pages/vendor/*` | `Partner*` equivalents, `pages/partner/*` |
+
+**Changes:**
+
+1. **New migration (`20260903000001_rename_vendor_to_usj_partner.sql`)**
+   - Renames table, columns, constraints and indexes; backfills the role value.
+   - Recreates the three helper functions and every dependent RLS policy
+     (products, order_items, usj_partners, product-images storage).
+   - Earlier `20260829*` migrations are deliberately left untouched — they are
+     already applied upstream, so rewriting them would desync `db reset` from
+     the remote. The schema is rolled forward instead.
+   - The role backfill temporarily disables `trg_prevent_role_self_escalation`,
+     which would otherwise reject the UPDATE when run from the SQL Editor
+     (`auth.uid()` is NULL there, so `is_admin()` is false).
+
+2. **Edge function (`delete-account/index.ts`)**
+   - `closeVendor()` → `closePartner()`; reads `usj_partners` / `partner_id`.
+   - Sweeps **both** `partner-kyc` and `vendor-kyc` on deletion, so KYC
+     documents uploaded before the rename are still removed.
+
+3. **Frontend**
+   - Files renamed via `git mv` (history preserved).
+   - `ROUTES` constants, auth store selectors (`isPartner`, `getPartnerId`),
+     and all Supabase queries updated.
+   - User-facing copy now reads "USJ Partner" / "USJ Partners".
+
+4. **Backwards compatibility**
+   - `/vendor/*` redirects to the matching `/partner/*` route, preserving
+     sub-path, query string and hash.
+   - `/admin/vendors` redirects to `/admin/partners`.
+   - `robots.txt` disallows both `/partner/` and the legacy `/vendor/`.
+
+**Known follow-ups (not done):**
+- Existing KYC objects still physically live under the `vendor-kyc` bucket;
+  SQL can't move storage objects. Migrating them needs a copy script.
+- Any external links or saved bookmarks to `/vendor/*` rely on the redirect
+  routes above; those can be removed once traffic drops off.
+
 ---
 
 ## Session 7 — 2026-08-29

@@ -5,9 +5,9 @@ import toast from 'react-hot-toast';
 import useAuthStore from '../../store/authStore';
 import Skeleton from '../../components/ui/Skeleton';
 
-export default function VendorDashboardPage() {
+export default function PartnerDashboardPage() {
   const { profile, user } = useAuthStore();
-  const vendorId = profile?.vendor_id;
+  const partnerId = profile?.partner_id;
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -18,18 +18,18 @@ export default function VendorDashboardPage() {
   });
 
   useEffect(() => {
-    if (!vendorId) return;
+    if (!partnerId) return;
     fetchStats();
-  }, [vendorId]);
+  }, [partnerId]);
 
   const fetchStats = async () => {
     setLoading(true);
     try {
-      // 1. Count vendor's products
+      // 1. Count USJ Partner's products
       const { data: products, error: productsError } = await supabase
         .from('products')
         .select('id', { count: 'exact', head: false })
-        .eq('vendor_id', vendorId);
+        .eq('partner_id', partnerId);
 
       if (productsError) throw productsError;
 
@@ -37,16 +37,16 @@ export default function VendorDashboardPage() {
       const { data: activeProducts, error: activeError } = await supabase
         .from('products')
         .select('id', { count: 'exact', head: false })
-        .eq('vendor_id', vendorId)
+        .eq('partner_id', partnerId)
         .eq('is_active', true);
 
       if (activeError) throw activeError;
 
-      // 3. Count order_items for vendor's products
+      // 3. Count order_items for USJ Partner's products
       const { data: orders, error: ordersError } = await supabase
         .from('order_items')
         .select('id', { count: 'exact', head: false })
-        .eq('vendor_id', vendorId);
+        .eq('partner_id', partnerId);
 
       if (ordersError) throw ordersError;
 
@@ -184,7 +184,7 @@ export default function VendorDashboardPage() {
             List a new product to your storefront
           </p>
           <a
-            href="/vendor/products"
+            href="/partner/products"
             className="inline-block px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-[6px] hover:bg-blue-700 transition-colors"
           >
             Go to Products
@@ -199,7 +199,7 @@ export default function VendorDashboardPage() {
             Manage orders from your customers
           </p>
           <a
-            href="/vendor/orders"
+            href="/partner/orders"
             className="inline-block px-4 py-2 bg-green-600 text-white text-xs font-semibold rounded-[6px] hover:bg-green-700 transition-colors"
           >
             View All Orders

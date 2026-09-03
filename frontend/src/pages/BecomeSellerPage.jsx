@@ -103,7 +103,7 @@ const BecomeSellerPage = () => {
     setLoading(true);
 
     try {
-      // 1. Generate vendor slug from business name
+      // 1. Generate partner slug from business name
       const slug = form.businessName
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, '')
@@ -111,24 +111,24 @@ const BecomeSellerPage = () => {
         .replace(/\s+/g, '-')
         .replace(/-{2,}/g, '-') + '-' + Date.now();
 
-      // 2. Upload KYC file to vendor-kyc storage
+      // 2. Upload KYC file to partner-kyc storage
       const fileName = `${user.id}/${Date.now()}-${form.kycFile.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('vendor-kyc')
+        .from('partner-kyc')
         .upload(fileName, form.kycFile);
 
       if (uploadError) throw uploadError;
 
       // 3. Get public URL for the uploaded file
       const { data: urlData } = supabase.storage
-        .from('vendor-kyc')
+        .from('partner-kyc')
         .getPublicUrl(fileName);
 
       const kycUrl = urlData?.publicUrl;
 
-      // 4. Create vendor row with status 'pending'
-      const { data: vendorData, error: vendorError } = await supabase
-        .from('vendors')
+      // 4. Create partner row with status 'pending'
+      const { data: partnerData, error: partnerError } = await supabase
+        .from('usj_partners')
         .insert({
           business_name: form.businessName,
           slug,
@@ -148,13 +148,13 @@ const BecomeSellerPage = () => {
         .select()
         .single();
 
-      if (vendorError) throw vendorError;
+      if (partnerError) throw partnerError;
 
-      // 5. Link user profile to vendor (do not change role to vendor until admin approves)
+      // 5. Link user profile to partner (do not change role to partner until admin approves)
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          vendor_id: vendorData.id,
+          partner_id: partnerData.id,
         })
         .eq('id', user.id);
 
@@ -163,10 +163,10 @@ const BecomeSellerPage = () => {
       // 6. Success! Refresh user profile and navigate
       await useAuthStore.getState()._applySession(useAuthStore.getState().session);
 
-      toast.success('Your vendor application has been submitted! We will review it shortly.');
-      navigate('/vendor/dashboard');
+      toast.success('Your USJ Partner application has been submitted! We will review it shortly.');
+      navigate('/partner/dashboard');
     } catch (error) {
-      console.error('Vendor registration error:', error);
+      console.error('USJ Partner registration error:', error);
       toast.error(error.message || 'Failed to submit application');
     } finally {
       setLoading(false);
@@ -201,17 +201,17 @@ const BecomeSellerPage = () => {
     );
   }
 
-  if (profile?.role === 'vendor') {
+  if (profile?.role === 'usj_partner') {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-8 text-center">
           <CheckCircle size={40} className="mx-auto text-green-500 mb-4" />
           <h2 className="text-lg font-semibold text-[#0A1628] mb-2">Already a seller</h2>
           <p className="text-sm text-[#718096] mb-6">
-            You're already registered as a vendor. Access your dashboard to manage your products and orders.
+            You're already registered as a USJ Partner. Access your dashboard to manage your products and orders.
           </p>
           <button
-            onClick={() => navigate('/vendor/dashboard')}
+            onClick={() => navigate('/partner/dashboard')}
             className="px-4 py-2 bg-[#0A1628] text-white text-sm font-semibold rounded-[6px] hover:bg-[#1A2E4A] transition-colors"
           >
             Go to Dashboard
@@ -224,7 +224,7 @@ const BecomeSellerPage = () => {
   return (
     <div className="max-w-2xl mx-auto px-4 py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#0A1628] mb-2">Become a Seller</h1>
+        <h1 className="text-3xl font-bold text-[#0A1628] mb-2">Become a Partner</h1>
         <p className="text-[#718096]">
           Join USJ Technologies marketplace and reach thousands of customers. Fill in your business details below to get started.
         </p>
@@ -357,7 +357,7 @@ const BecomeSellerPage = () => {
         {/* Bank Details Section */}
         <div>
           <h2 className="text-sm font-bold text-[#0A1628] mb-4 uppercase tracking-wider">Bank Details (for future payouts)</h2>
-          <p className="text-xs text-[#718096] mb-4">These are stored securely and used only for vendor payouts once payment splitting is enabled.</p>
+          <p className="text-xs text-[#718096] mb-4">These are stored securely and used only for USJ Partner payouts once payment splitting is enabled.</p>
 
           <div className="space-y-4">
             {/* Account Number */}

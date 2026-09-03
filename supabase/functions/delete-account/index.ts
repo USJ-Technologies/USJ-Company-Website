@@ -1,7 +1,7 @@
 /**
  * Supabase Edge Function: delete-account
  *
- * Self-service account deletion for customers and vendors.
+ * Self-service account deletion for customers and USJ Partners.
  * Requires a valid user JWT (Authorization header).
  *
  * Deploy:
@@ -12,7 +12,10 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const TEAM_ROLES = new Set(['admin', 'manager', 'staff']);
-const KYC_MARKER = '/vendor-kyc/';
+
+// KYC documents uploaded before the vendor → USJ Partner rename still live
+// in the legacy `vendor-kyc` bucket, so both are swept on deletion.
+const KYC_BUCKETS = ['partner-kyc', 'vendor-kyc'];
 
 const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? '*';
 const CORS_HEADERS = {
@@ -28,43 +31,56 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   });
 }
 
-function storagePathFromUrl(url: string, marker: string): string | null {
-  const index = url.indexOf(marker);
-  if (index === -1) return null;
-  return url.slice(index + marker.length);
+function bucketAndPathFromUrl(url: string): { bucket: string; path: string } | null {
+  for (const bucket of KYC_BUCKETS) {
+    const marker = `/${bucket}/`;
+    const index = url.indexOf(marker);
+    if (index !== -1) {
+      return { bucket, path: url.slice(index + marker.length) };
+    }
+  }
+  return null;
 }
 
-async function closeVendor(
+async function closePartner(
   admin: ReturnType<typeof createClient>,
-  vendorId: string,
+  partnerId: string,
   userId: string,
 ) {
-  const { data: vendor } = await admin
-    .from('vendors')
+  const { data: partner } = await admin
+    .from('usj_partners')
     .select('kyc_document_urls')
-    .eq('id', vendorId)
+    .eq('id', partnerId)
     .maybeSingle();
 
-  const paths = new Set<string>();
+  const pathsByBucket = new Map<string, Set<string>>(
+    KYC_BUCKETS.map((bucket) => [bucket, new Set<string>()]),
+  );
 
-  for (const url of vendor?.kyc_document_urls ?? []) {
-    const path = storagePathFromUrl(url, KYC_MARKER);
-    if (path) paths.add(path);
+  for (const url of partner?.kyc_document_urls ?? []) {
+    const found = bucketAndPathFromUrl(url);
+    if (found) pathsByBucket.get(found.bucket)?.add(found.path);
   }
 
-  const { data: folderFiles } = await admin.storage.from('vendor-kyc').list(userId);
-  for (const file of folderFiles ?? []) {
-    paths.add(`${userId}/${file.name}`);
+  // Also sweep the user's own folder, to catch uploads that never made it
+  // onto kyc_document_urls.
+  for (const bucket of KYC_BUCKETS) {
+    const { data: folderFiles } = await admin.storage.from(bucket).list(userId);
+    for (const file of folderFiles ?? []) {
+      pathsByBucket.get(bucket)?.add(`${userId}/${file.name}`);
+    }
   }
 
-  if (paths.size > 0) {
-    await admin.storage.from('vendor-kyc').remove([...paths]);
+  for (const [bucket, paths] of pathsByBucket) {
+    if (paths.size > 0) {
+      await admin.storage.from(bucket).remove([...paths]);
+    }
   }
 
-  await admin.from('products').update({ is_active: false }).eq('vendor_id', vendorId);
+  await admin.from('products').update({ is_active: false }).eq('partner_id', partnerId);
 
   await admin
-    .from('vendors')
+    .from('usj_partners')
     .update({
       status: 'closed',
       business_name: 'Closed Account',
@@ -77,7 +93,7 @@ async function closeVendor(
       created_by: null,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', vendorId);
+    .eq('id', partnerId);
 }
 
 serve(async (req) => {
@@ -122,7 +138,7 @@ serve(async (req) => {
 
     const { data: profile, error: profileError } = await admin
       .from('profiles')
-      .select('role, vendor_id')
+      .select('role, partner_id')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -135,21 +151,21 @@ serve(async (req) => {
       );
     }
 
-    const handledVendorIds = new Set<string>();
+    const handledPartnerIds = new Set<string>();
 
-    if (profile?.vendor_id) {
-      await closeVendor(admin, profile.vendor_id, user.id);
-      handledVendorIds.add(profile.vendor_id);
+    if (profile?.partner_id) {
+      await closePartner(admin, profile.partner_id, user.id);
+      handledPartnerIds.add(profile.partner_id);
     }
 
-    const { data: ownedVendors } = await admin
-      .from('vendors')
+    const { data: ownedPartners } = await admin
+      .from('usj_partners')
       .select('id')
       .eq('created_by', user.id);
 
-    for (const vendor of ownedVendors ?? []) {
-      if (handledVendorIds.has(vendor.id)) continue;
-      await closeVendor(admin, vendor.id, user.id);
+    for (const partner of ownedPartners ?? []) {
+      if (handledPartnerIds.has(partner.id)) continue;
+      await closePartner(admin, partner.id, user.id);
     }
 
     const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);

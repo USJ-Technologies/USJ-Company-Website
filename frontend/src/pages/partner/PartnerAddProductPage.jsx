@@ -77,12 +77,12 @@ function FieldRow({ label, required, children }) {
 
 // ── Main page ────────────────────────────────────────────────────────────────
 
-export default function VendorAddProductPage() {
+export default function PartnerAddProductPage() {
   const navigate = useNavigate();
   const { productId } = useParams();
   const isEditing = Boolean(productId);
   const { profile } = useAuthStore();
-  const vendorId = profile?.vendor_id;
+  const partnerId = profile?.partner_id;
   const fileRef = useRef(null);
 
   const [saving, setSaving] = useState(false);
@@ -108,7 +108,7 @@ export default function VendorAddProductPage() {
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
   useEffect(() => {
-    if (!isEditing || !vendorId) return;
+    if (!isEditing || !partnerId) return;
 
     const loadProduct = async () => {
       setLoadingProduct(true);
@@ -117,7 +117,7 @@ export default function VendorAddProductPage() {
           .from('products')
           .select('*')
           .eq('id', productId)
-          .eq('vendor_id', vendorId)
+          .eq('partner_id', partnerId)
           .single();
 
         if (error) throw error;
@@ -141,14 +141,14 @@ export default function VendorAddProductPage() {
       } catch (error) {
         console.error('Error loading product:', error);
         toast.error('Failed to load product');
-        navigate('/vendor/products');
+        navigate('/partner/products');
       } finally {
         setLoadingProduct(false);
       }
     };
 
     loadProduct();
-  }, [isEditing, productId, vendorId, navigate]);
+  }, [isEditing, productId, partnerId, navigate]);
 
   // Auto-generate slug for new products only
   useEffect(() => {
@@ -198,7 +198,7 @@ export default function VendorAddProductPage() {
     setUploading(true);
     try {
       const webpBlob = await compressImageToWebp(file);
-      const path = `vendor/${vendorId}/${form.slug || `product-${Date.now()}`}/${Date.now()}.webp`;
+      const path = `partner/${partnerId}/${form.slug || `product-${Date.now()}`}/${Date.now()}.webp`;
       const { data, error } = await supabase.storage
         .from('product-images')
         .upload(path, webpBlob, { cacheControl: '31536000', upsert: true, contentType: 'image/webp' });
@@ -239,7 +239,7 @@ export default function VendorAddProductPage() {
         is_b2b: false,
         unit_price: form.unit_price ? parseFloat(form.unit_price) : null,
         mrp: form.mrp ? parseFloat(form.mrp) : null,
-        vendor_id: vendorId,
+        partner_id: partnerId,
         updated_at: new Date().toISOString(),
       };
 
@@ -248,7 +248,7 @@ export default function VendorAddProductPage() {
           .from('products')
           .update(row)
           .eq('id', productId)
-          .eq('vendor_id', vendorId)
+          .eq('partner_id', partnerId)
           .select('id')
           .single();
 
@@ -260,7 +260,7 @@ export default function VendorAddProductPage() {
       }
 
       toast.success(isEditing ? 'Product updated successfully!' : 'Product created successfully!');
-      navigate('/vendor/products');
+      navigate('/partner/products');
     } catch (error) {
       console.error('Error saving product:', error);
       toast.error(
@@ -290,7 +290,7 @@ export default function VendorAddProductPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate('/vendor/products')}
+          onClick={() => navigate('/partner/products')}
           className="p-2 rounded-md text-[#718096] hover:text-[#0A1628] hover:bg-gray-100 transition-colors"
         >
           <ArrowLeft size={20} />
@@ -494,7 +494,7 @@ export default function VendorAddProductPage() {
 
       {/* ── Bottom Save ── */}
       <div className="flex justify-end gap-3 pb-8">
-        <button onClick={() => navigate('/vendor/products')} className="px-5 py-2.5 text-sm font-semibold text-[#718096] border border-[#E2E8F0] rounded-[6px] hover:bg-gray-50 transition-colors">
+        <button onClick={() => navigate('/partner/products')} className="px-5 py-2.5 text-sm font-semibold text-[#718096] border border-[#E2E8F0] rounded-[6px] hover:bg-gray-50 transition-colors">
           Cancel
         </button>
         <button

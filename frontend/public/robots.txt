@@ -1,8 +1,9 @@
 User-agent: *
 Allow: /
 
-# Block admin, vendor dashboard, and auth pages from indexing
+# Block admin, USJ Partner dashboard, and auth pages from indexing
 Disallow: /admin/
+Disallow: /partner/
 Disallow: /vendor/
 Disallow: /profile
 Disallow: /orders

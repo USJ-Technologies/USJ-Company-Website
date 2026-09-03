@@ -12,8 +12,8 @@ const ACCOUNT_TYPES = [
     icon: User,
   },
   {
-    id: 'vendor',
-    label: 'Vendor',
+    id: 'usj_partner',
+    label: 'USJ Partner',
     description: 'Manage your storefront',
     icon: Store,
   },
@@ -27,7 +27,7 @@ const ACCOUNT_TYPES = [
 
 const DEFAULT_DESTINATIONS = {
   customer: '/profile',
-  vendor: '/vendor/dashboard',
+  usj_partner: '/partner/dashboard',
   employee: '/admin/dashboard',
 };
 
@@ -38,11 +38,11 @@ function getRedirectPath(accountType, fromPath) {
     return fallback;
   }
 
-  if (accountType === 'vendor' && fromPath.startsWith('/vendor')) return fromPath;
+  if (accountType === 'usj_partner' && fromPath.startsWith('/partner')) return fromPath;
   if (accountType === 'employee' && fromPath.startsWith('/admin')) return fromPath;
   if (
     accountType === 'customer' &&
-    !fromPath.startsWith('/vendor') &&
+    !fromPath.startsWith('/partner') &&
     !fromPath.startsWith('/admin')
   ) {
     return fromPath;
@@ -133,7 +133,7 @@ const LoginPage = () => {
             </div>
             <p className="mt-3 text-xs text-gray-500">
               {accountType === 'customer' && 'Use your shopping account credentials.'}
-              {accountType === 'vendor' && 'For approved sellers managing products and orders.'}
+              {accountType === 'usj_partner' && 'For approved sellers managing products and orders.'}
               {accountType === 'employee' && 'For USJ team members with admin portal access.'}
             </p>
           </div>
@@ -225,12 +225,12 @@ const LoginPage = () => {
               >
                 Create a customer account
               </Link>
-              {accountType === 'vendor' && (
+              {accountType === 'usj_partner' && (
                 <Link
                   to="/become-a-seller"
                   className="w-full flex justify-center py-2 px-4 border border-[#E2E8F0] rounded-lg text-sm font-medium text-[#0A1628] hover:bg-gray-50 transition-colors"
                 >
-                  Apply to become a vendor
+                  Apply to become a USJ Partner
                 </Link>
               )}
             </div>

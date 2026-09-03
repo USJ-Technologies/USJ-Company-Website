@@ -344,21 +344,21 @@ export default function ProductDetailPage() {
                   </p>
                 )}
 
-                {/* Vendor Info */}
-                {product.vendors && (
+                {/* USJ Partner Info */}
+                {product.usj_partners && (
                   <Link
-                    to={`/store/${product.vendors.slug}`}
+                    to={`/store/${product.usj_partners.slug}`}
                     className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 bg-[#F8F9FA] hover:bg-[#EBF0F5] border border-[#E2E8F0] rounded-[6px] transition-colors"
                   >
-                    {product.vendors.logo_url && (
+                    {product.usj_partners.logo_url && (
                       <img
-                        src={product.vendors.logo_url}
-                        alt={product.vendors.business_name}
+                        src={product.usj_partners.logo_url}
+                        alt={product.usj_partners.business_name}
                         className="w-5 h-5 object-contain"
                       />
                     )}
                     <span className="text-xs font-semibold text-[#0A1628]">
-                      Sold by {product.vendors.business_name}
+                      Sold by {product.usj_partners.business_name}
                     </span>
                     <ChevronRight size={14} className="text-[#718096]" />
                   </Link>

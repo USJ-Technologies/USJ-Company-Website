@@ -16,7 +16,7 @@ const ALL_NAV_ITEMS = [
   { label: 'Certifications', to: ROUTES.ADMIN_CERTIFICATIONS, icon: Award,           roles: ['admin', 'manager'] },
   { label: 'Careers',        to: ROUTES.ADMIN_CAREERS,        icon: Briefcase,       roles: ['admin', 'manager'] },
   { label: 'Blog',           to: ROUTES.ADMIN_BLOG,           icon: BookOpen,        roles: ['admin', 'manager'] },
-  { label: 'Vendors',        to: ROUTES.ADMIN_VENDORS,        icon: Building2,       roles: ['admin', 'manager'] },
+  { label: 'USJ Partners',        to: ROUTES.ADMIN_PARTNERS,        icon: Building2,       roles: ['admin', 'manager'] },
   { label: 'Team',           to: ROUTES.ADMIN_TEAM,           icon: Users,           roles: ['admin'] },
   { label: 'Ventures',       to: ROUTES.ADMIN_VENTURES,       icon: Building2,       roles: ['admin'] },
   { label: 'Access Control', to: ROUTES.ADMIN_ACCESS_CONTROL, icon: Shield,          roles: ['admin'] },
@@ -155,7 +155,7 @@ export default function AdminLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main data-scroll-container className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>
       </div>

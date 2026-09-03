@@ -8,11 +8,11 @@ import SEOHead from '../components/seo/SEOHead';
 
 const PAGE_SIZE = 20;
 
-export default function VendorStorefrontPage() {
+export default function PartnerStorefrontPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
 
-  const [vendor, setVendor] = useState(null);
+  const [partner, setPartner] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,33 +21,33 @@ export default function VendorStorefrontPage() {
   const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
-    fetchVendor();
+    fetchPartner();
   }, [slug]);
 
   useEffect(() => {
-    if (!vendor?.id) return;
+    if (!partner?.id) return;
     fetchProducts();
-  }, [vendor?.id, currentPage, searchTerm]);
+  }, [partner?.id, currentPage, searchTerm]);
 
-  const fetchVendor = async () => {
+  const fetchPartner = async () => {
     try {
       const { data, error } = await supabase
-        .from('vendors')
+        .from('usj_partners')
         .select('*')
         .eq('slug', slug)
         .eq('status', 'approved')
         .single();
 
       if (error || !data) {
-        toast.error('Vendor not found');
+        toast.error('USJ Partner not found');
         navigate('/shop');
         return;
       }
 
-      setVendor(data);
+      setPartner(data);
     } catch (error) {
-      console.error('Error fetching vendor:', error);
-      toast.error('Failed to load vendor');
+      console.error('Error fetching USJ Partner:', error);
+      toast.error('Failed to load USJ Partner');
       navigate('/shop');
     }
   };
@@ -58,7 +58,7 @@ export default function VendorStorefrontPage() {
       let query = supabase
         .from('products')
         .select('*', { count: 'exact' })
-        .eq('vendor_id', vendor.id)
+        .eq('partner_id', partner.id)
         .eq('is_active', true);
 
       if (searchTerm) {
@@ -81,11 +81,11 @@ export default function VendorStorefrontPage() {
     }
   };
 
-  if (!vendor && !loading) {
+  if (!partner && !loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12 text-center">
         <Package size={48} className="mx-auto text-gray-300 mb-4" />
-        <p className="text-lg font-semibold text-[#0A1628]">Vendor not found</p>
+        <p className="text-lg font-semibold text-[#0A1628]">USJ Partner not found</p>
       </div>
     );
   }
@@ -95,8 +95,8 @@ export default function VendorStorefrontPage() {
   return (
     <>
       <SEOHead
-        title={`${vendor?.business_name || 'Vendor'} Store - USJ Technologies`}
-        description={vendor?.storefront_description || 'Browse products from this vendor'}
+        title={`${partner?.business_name || 'USJ Partner'} Store - USJ Technologies`}
+        description={partner?.storefront_description || 'Browse products from this USJ Partner'}
         canonical={`https://www.usjtechnologies.com/store/${slug}`}
       />
 
@@ -113,16 +113,16 @@ export default function VendorStorefrontPage() {
           </div>
         </div>
 
-        {/* Vendor Header */}
-        {vendor && (
+        {/* USJ Partner Header */}
+        {partner && (
           <div className="bg-white border-b border-[#E2E8F0]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
               <div className="flex items-start gap-6">
                 {/* Logo */}
-                {vendor.logo_url && (
+                {partner.logo_url && (
                   <img
-                    src={vendor.logo_url}
-                    alt={vendor.business_name}
+                    src={partner.logo_url}
+                    alt={partner.business_name}
                     className="w-24 h-24 object-contain bg-[#F8F9FA] rounded-lg p-2"
                   />
                 )}
@@ -130,24 +130,24 @@ export default function VendorStorefrontPage() {
                 {/* Info */}
                 <div className="flex-1">
                   <h1 className="text-3xl font-bold text-[#0A1628] mb-2">
-                    {vendor.business_name}
+                    {partner.business_name}
                   </h1>
                   <p className="text-[#718096] mb-4 max-w-2xl">
-                    {vendor.storefront_description}
+                    {partner.storefront_description}
                   </p>
 
                   {/* Contact Info */}
                   <div className="flex flex-wrap gap-6 text-sm">
-                    {vendor.contact_info?.email && (
+                    {partner.contact_info?.email && (
                       <div className="flex items-center gap-2 text-[#0A1628]">
                         <Mail size={16} className="text-[#C9A84C]" />
-                        {vendor.contact_info.email}
+                        {partner.contact_info.email}
                       </div>
                     )}
-                    {vendor.contact_info?.phone && (
+                    {partner.contact_info?.phone && (
                       <div className="flex items-center gap-2 text-[#0A1628]">
                         <Phone size={16} className="text-[#C9A84C]" />
-                        {vendor.contact_info.phone}
+                        {partner.contact_info.phone}
                       </div>
                     )}
                   </div>
@@ -212,7 +212,7 @@ export default function VendorStorefrontPage() {
               <Package size={48} className="mx-auto text-gray-300 mb-3" />
               <p className="text-lg font-semibold text-[#0A1628]">No products found</p>
               <p className="text-sm text-[#718096]">
-                {searchTerm ? 'Try adjusting your search' : 'This vendor has no active products yet'}
+                {searchTerm ? 'Try adjusting your search' : 'This USJ Partner has no active products yet'}
               </p>
             </div>
           ) : (

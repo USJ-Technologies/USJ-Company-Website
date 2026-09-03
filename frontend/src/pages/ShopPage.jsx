@@ -269,7 +269,7 @@ export default function ShopPage() {
             </p>
           </div>
           
-          {/* Become a Seller Banner */}
+          {/* Become a Partner Banner */}
           <div className="bg-[#F8F9FA] border border-[#E2E8F0] rounded-[8px] p-4 flex items-center justify-between gap-6 sm:w-auto w-full">
              <div>
                <h3 className="text-sm font-bold text-[#0A1628]">Sell on USJ Marketplace</h3>
@@ -279,7 +279,7 @@ export default function ShopPage() {
                to="/become-a-seller"
                className="shrink-0 px-5 py-2 bg-[#0A1628] text-white text-sm font-semibold rounded-[6px] hover:bg-[#1A2E4A] transition-colors"
              >
-               Become a Seller
+               Become a Partner
              </Link>
           </div>
         </div>

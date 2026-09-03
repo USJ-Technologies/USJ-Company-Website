@@ -12,7 +12,7 @@ export default function ProfilePage() {
   const [deleteError, setDeleteError] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const isTeamAccount = ['admin', 'manager', 'staff'].includes(profile?.role);
-  const isVendorAccount = profile?.role === 'vendor';
+  const isPartnerAccount = profile?.role === 'usj_partner';
   const [formData, setFormData] = useState({
     name: profile?.name || '',
     phone: profile?.phone || '',
@@ -257,8 +257,8 @@ export default function ProfilePage() {
               <>
                 <p className="text-sm text-[#718096]">
                   Permanently delete your account and personal data from USJ Technologies.
-                  {isVendorAccount && (
-                    <> Your vendor storefront will be closed, products hidden, and KYC documents removed.</>
+                  {isPartnerAccount && (
+                    <> Your USJ Partner storefront will be closed, products hidden, and KYC documents removed.</>
                   )}
                   {' '}This action cannot be undone.
                 </p>

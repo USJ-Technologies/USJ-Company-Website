@@ -55,7 +55,7 @@ export async function getProducts({
 export async function getProductBySlug(slug) {
   const { data: product, error } = await supabase
     .from('products')
-    .select('*, vendors(id, business_name, slug, logo_url)')
+    .select('*, usj_partners(id, business_name, slug, logo_url)')
     .eq('slug', slug)
     .eq('is_active', true)
     .single();

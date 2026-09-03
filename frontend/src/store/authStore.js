@@ -69,8 +69,8 @@ const useAuthStore = create((set, get) => ({
 
     const roleMatches = (() => {
       switch (accountType) {
-        case 'vendor':
-          return profile.role === 'vendor';
+        case 'usj_partner':
+          return profile.role === 'usj_partner';
         case 'employee':
           return ['admin', 'manager', 'staff'].includes(profile.role);
         case 'customer':
@@ -91,7 +91,7 @@ const useAuthStore = create((set, get) => ({
 
       const messages = {
         customer: 'This account is not registered as a customer.',
-        vendor: 'This account is not registered as a vendor.',
+        usj_partner: 'This account is not registered as a USJ Partner.',
         employee: 'This account does not have employee access.',
       };
       toast.error(messages[accountType] || messages.customer);
@@ -215,8 +215,8 @@ const useAuthStore = create((set, get) => ({
 
   isAdmin: () => get().profile?.role === 'admin',
   hasRole: (...roles) => roles.includes(get().profile?.role),
-  isVendor: () => get().profile?.role === 'vendor',
-  getVendorId: () => get().profile?.vendor_id || null,
+  isPartner: () => get().profile?.role === 'usj_partner',
+  getPartnerId: () => get().profile?.partner_id || null,
 }));
 
 export default useAuthStore;

@@ -12,7 +12,7 @@ const quickLinks = [
   { label: 'Certifications', to: ROUTES.CERTIFICATIONS },
   { label: 'Projects', to: ROUTES.PROJECTS },
   { label: 'Careers', to: ROUTES.CAREERS },
-  { label: 'Become a Seller', to: ROUTES.BECOME_SELLER },
+  { label: 'Become a Partner', to: ROUTES.BECOME_SELLER },
   { label: 'Contact', to: ROUTES.CONTACT },
 ];
 

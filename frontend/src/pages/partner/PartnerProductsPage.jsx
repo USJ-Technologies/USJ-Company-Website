@@ -8,9 +8,9 @@ import { Link } from 'react-router-dom';
 
 const PAGE_SIZE = 20;
 
-export default function VendorProductsPage() {
+export default function PartnerProductsPage() {
   const { profile } = useAuthStore();
-  const vendorId = profile?.vendor_id;
+  const partnerId = profile?.partner_id;
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,18 +21,18 @@ export default function VendorProductsPage() {
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
-    if (!vendorId) return;
+    if (!partnerId) return;
     fetchProducts();
-  }, [vendorId, activeFilter, currentPage]);
+  }, [partnerId, activeFilter, currentPage]);
 
   const fetchProducts = async () => {
-    if (!vendorId) return;
+    if (!partnerId) return;
     setLoading(true);
     try {
       let query = supabase
         .from('products')
         .select('*', { count: 'exact' })
-        .eq('vendor_id', vendorId);
+        .eq('partner_id', partnerId);
 
       if (activeFilter !== 'all') {
         query = query.eq('is_active', activeFilter === 'active');
@@ -64,7 +64,7 @@ export default function VendorProductsPage() {
         .from('products')
         .update({ is_active: !product.is_active })
         .eq('id', product.id)
-        .eq('vendor_id', vendorId);
+        .eq('partner_id', partnerId);
 
       if (error) throw error;
 
@@ -116,7 +116,7 @@ export default function VendorProductsPage() {
         .from('products')
         .delete()
         .eq('id', product.id)
-        .eq('vendor_id', vendorId)
+        .eq('partner_id', partnerId)
         .select('id');
 
       if (error) throw error;
@@ -154,7 +154,7 @@ export default function VendorProductsPage() {
           </p>
         </div>
         <Link
-          to="/vendor/products/new"
+          to="/partner/products/new"
           className="flex items-center gap-2 px-4 py-2 bg-[#0A1628] text-white text-sm font-semibold rounded-[6px] hover:bg-[#1A2E4A] transition-colors"
         >
           <Plus size={16} /> Add Product
@@ -278,7 +278,7 @@ export default function VendorProductsPage() {
                     </button>
 
                     <Link
-                      to={`/vendor/products/${product.id}`}
+                      to={`/partner/products/${product.id}`}
                       className="p-2 text-[#718096] hover:text-[#0A1628] hover:bg-[#F7FAFC] rounded-[6px] transition-colors"
                       title="Edit product"
                     >

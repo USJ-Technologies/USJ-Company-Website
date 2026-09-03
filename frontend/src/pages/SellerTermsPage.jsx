@@ -7,7 +7,7 @@ export default function SellerTermsPage() {
     <>
       <SEOHead
         title="Seller Agreement & Marketplace Terms - USJ Technologies"
-        description="Terms and conditions for sellers on USJ Technologies marketplace. Understand vendor requirements, commission structure, and policies."
+        description="Terms and conditions for sellers on USJ Technologies marketplace. Understand USJ Partner requirements, commission structure, and policies."
         canonical="https://www.usjtechnologies.com/seller-terms"
       />
 
@@ -253,7 +253,7 @@ export default function SellerTermsPage() {
           {/* CTA */}
           <div className="mt-12 text-center">
             <p className="text-[#718096] mb-4">
-              Ready to become a seller?
+              Ready to become a partner?
             </p>
             <Link
               to="/become-a-seller"

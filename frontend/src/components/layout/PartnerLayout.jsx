@@ -6,10 +6,10 @@ import {
 import { ROUTES } from '../../config/app';
 import useAuthStore from '../../store/authStore';
 
-const VENDOR_NAV_ITEMS = [
-  { label: 'Dashboard', to: ROUTES.VENDOR_DASHBOARD, icon: LayoutDashboard },
-  { label: 'Products', to: ROUTES.VENDOR_PRODUCTS, icon: Package },
-  { label: 'Orders', to: ROUTES.VENDOR_ORDERS, icon: ShoppingCart },
+const PARTNER_NAV_ITEMS = [
+  { label: 'Dashboard', to: ROUTES.PARTNER_DASHBOARD, icon: LayoutDashboard },
+  { label: 'Products', to: ROUTES.PARTNER_PRODUCTS, icon: Package },
+  { label: 'Orders', to: ROUTES.PARTNER_ORDERS, icon: ShoppingCart },
 ];
 
 function Sidebar({ user, onClose }) {
@@ -22,13 +22,13 @@ function Sidebar({ user, onClose }) {
       <div className="px-5 py-5 border-b" style={{ borderColor: '#1A2E4A' }}>
         <Link to={ROUTES.HOME} className="block" onClick={onClose}>
           <span className="text-lg font-bold text-white">USJ</span>
-          <span className="text-lg font-bold text-[#C9A84C]"> Seller</span>
+          <span className="text-lg font-bold text-[#C9A84C]"> Partners</span>
         </Link>
         <p className="text-xs text-[#4A5568] mt-0.5">Your Store</p>
       </div>
 
       <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
-        {VENDOR_NAV_ITEMS.map(({ label, to, icon: Icon }) => (
+        {PARTNER_NAV_ITEMS.map(({ label, to, icon: Icon }) => (
           <Link
             key={to}
             to={to}
@@ -52,11 +52,11 @@ function Sidebar({ user, onClose }) {
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
             style={{ backgroundColor: '#C9A84C', color: '#0A1628' }}
           >
-            {user?.name?.[0] || 'V'}
+            {user?.name?.[0] || 'P'}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-white truncate">{user?.name || 'Vendor'}</p>
-            <p className="text-xs text-[#4A5568] truncate">Seller · {user?.email}</p>
+            <p className="text-sm font-medium text-white truncate">{user?.name || 'USJ Partner'}</p>
+            <p className="text-xs text-[#4A5568] truncate">Partner · {user?.email}</p>
           </div>
         </div>
         <button
@@ -70,12 +70,12 @@ function Sidebar({ user, onClose }) {
   );
 }
 
-export default function VendorLayout() {
+export default function PartnerLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const { user, profile } = useAuthStore();
 
-  const currentPage = VENDOR_NAV_ITEMS.find(
+  const currentPage = PARTNER_NAV_ITEMS.find(
     (n) => location.pathname === n.to || location.pathname.startsWith(n.to + '/')
   );
 
@@ -114,7 +114,7 @@ export default function VendorLayout() {
               <Menu size={20} />
             </button>
             <h1 className="text-lg font-semibold text-[#0A1628]">
-              {currentPage?.label || 'Vendor Dashboard'}
+              {currentPage?.label || 'USJ Partner Dashboard'}
             </h1>
           </div>
 
@@ -137,7 +137,7 @@ export default function VendorLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main data-scroll-container className="flex-1 overflow-y-auto">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <Outlet />
           </div>
