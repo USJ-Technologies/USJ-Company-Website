@@ -78,9 +78,22 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const result = await login({ ...formData, accountType });
-    if (result.success) {
-      navigate(getRedirectPath(accountType, from), { replace: true });
-    }
+    if (!result.success) return;
+
+    // Route on the role the account actually has, not the tab that was
+    // clicked. An applicant awaiting approval signs in under "USJ Partner"
+    // while still being role 'customer'; sending them to /partner/dashboard
+    // would bounce off PartnerRoute straight back to /login. /profile carries
+    // the application-status card instead.
+    const role = result.profile?.role;
+    const effectiveType =
+      role === 'usj_partner'
+        ? 'usj_partner'
+        : ['admin', 'manager', 'staff'].includes(role)
+          ? 'employee'
+          : 'customer';
+
+    navigate(getRedirectPath(effectiveType, from), { replace: true });
   };
 
   return (
