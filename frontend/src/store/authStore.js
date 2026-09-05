@@ -70,7 +70,12 @@ const useAuthStore = create((set, get) => ({
     const roleMatches = (() => {
       switch (accountType) {
         case 'usj_partner':
-          return profile.role === 'usj_partner';
+          // An applicant keeps role 'customer' until an admin approves them,
+          // so matching on the role alone locked every pending and rejected
+          // applicant out of the account they had just created. A partner_id
+          // means an application exists, which is enough to sign in and see
+          // where it stands — PartnerRoute still guards the dashboard itself.
+          return profile.role === 'usj_partner' || profile.partner_id != null;
         case 'employee':
           return ['admin', 'manager', 'staff'].includes(profile.role);
         case 'customer':
@@ -91,7 +96,8 @@ const useAuthStore = create((set, get) => ({
 
       const messages = {
         customer: 'This account is not registered as a customer.',
-        usj_partner: 'This account is not registered as a USJ Partner.',
+        usj_partner:
+          'No USJ Partner account or application found for this login. Sign in as a Customer, or apply to become a partner.',
         employee: 'This account does not have employee access.',
       };
       toast.error(messages[accountType] || messages.customer);
@@ -106,7 +112,10 @@ const useAuthStore = create((set, get) => ({
       isLoading: false,
     });
     toast.success('Welcome back!');
-    return { success: true, accountType };
+    // The profile goes back to the caller so it can route on the real role
+    // rather than the tab that was clicked — a pending applicant picks
+    // "USJ Partner" but must not be sent to the partner dashboard.
+    return { success: true, accountType, profile };
   },
 
   register: async ({ name, email, password, phone, organization }) => {
