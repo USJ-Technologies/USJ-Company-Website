@@ -6,6 +6,7 @@ import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
 import { submitQuoteRequest } from '../lib/queries';
 import { trackEvent } from '../lib/analytics';
+import { isEmail, isPhone, normalizePhone } from '../lib/validation';
 
 const ORG_STORAGE_KEY = 'usj_known_organizations';
 const DEFAULT_ORGS = [
@@ -265,7 +266,11 @@ export default function QuoteRequestPage() {
     const e = {};
     if (!form.name.trim()) e.name = 'Name is required';
     if (!form.email.trim()) e.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Enter a valid email';
+    else if (!isEmail(form.email)) e.email = 'Enter a valid email';
+    // Was collected but never validated, so quote leads arrived unreachable.
+    if (form.phone.trim() && !isPhone(form.phone)) {
+      e.phone = 'Enter a 10-digit Indian mobile number, or leave it blank';
+    }
     return e;
   };
 
@@ -300,7 +305,7 @@ export default function QuoteRequestPage() {
       userId: user?.id ?? null,
       name: form.name.trim(),
       email: form.email.trim(),
-      phone: form.phone.trim() || null,
+      phone: form.phone.trim() ? normalizePhone(form.phone) : null,
       organization: form.organization.trim() || null,
       message: form.message.trim() || null,
       items,
@@ -402,8 +407,11 @@ export default function QuoteRequestPage() {
                       value={form.phone}
                       onChange={handleChange}
                       placeholder="+91 XXXXX XXXXX"
-                      className="w-full px-3 py-2.5 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C] bg-white"
+                      className={`w-full px-3 py-2.5 text-sm border rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C] bg-white ${
+                        errors.phone ? 'border-[#C53030]' : 'border-[#E2E8F0]'
+                      }`}
                     />
+                    {errors.phone && <p className="text-xs text-[#C53030] mt-1">{errors.phone}</p>}
                   </div>
 
                   <div>

@@ -4,6 +4,7 @@ import useAuthStore from '../store/authStore';
 import Button from '../components/ui/Button';
 import { Mail, Lock, User, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { isEmail } from '../lib/validation';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
@@ -16,12 +17,28 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Only the password match was checked here, so a malformed address or a
+    // 3-character password reached Supabase and came back as a raw API error.
+    if (!formData.name.trim()) {
+      return toast.error('Please enter your name');
+    }
+    if (!isEmail(formData.email)) {
+      return toast.error('Enter a valid email address');
+    }
+    if (formData.password.length < 6) {
+      return toast.error('Password must be at least 6 characters');
+    }
     if (formData.password !== formData.confirmPassword) {
       return toast.error("Passwords don't match");
     }
-    
+
     const { confirmPassword, ...dataToSubmit } = formData;
-    const result = await register(dataToSubmit);
+    const result = await register({
+      ...dataToSubmit,
+      name: dataToSubmit.name.trim(),
+      email: dataToSubmit.email.trim().toLowerCase(),
+    });
     if (result.success) {
       navigate('/profile');
     }

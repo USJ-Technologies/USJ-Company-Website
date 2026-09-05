@@ -6,6 +6,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { APP_CONFIG } from '../config/app';
 import { supabase } from '../lib/supabase';
+import { isEmail, isPhone, normalizePhone } from '../lib/validation';
 import toast from 'react-hot-toast';
 
 const inquiryTypes = ['General Inquiry', 'Request Quote', 'Partnership', 'GeM Order', 'Other'];
@@ -33,6 +34,17 @@ export default function ContactPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // This form relied entirely on the browser's `required` and type="email",
+    // which no longer applies once anything submits programmatically, and
+    // never checked the phone at all.
+    if (!form.fullName.trim()) return toast.error('Please enter your name');
+    if (!isEmail(form.email)) return toast.error('Enter a valid email address');
+    if (form.phone.trim() && !isPhone(form.phone)) {
+      return toast.error('Enter a 10-digit Indian mobile number, or leave it blank');
+    }
+    if (!form.message.trim()) return toast.error('Please enter a message');
+
     setSubmitting(true);
     const id = crypto.randomUUID();
     const reference_number = `USJ-${Date.now().toString(36).toUpperCase()}`;
@@ -40,11 +52,11 @@ export default function ContactPage() {
       id,
       reference_number,
       status: 'new',
-      name: form.fullName,
-      email: form.email,
-      phone: form.phone || null,
-      organization: form.organization || null,
-      message: `[${form.type}] ${form.subject ? form.subject + ': ' : ''}${form.message}`,
+      name: form.fullName.trim(),
+      email: form.email.trim().toLowerCase(),
+      phone: form.phone.trim() ? normalizePhone(form.phone) : null,
+      organization: form.organization.trim() || null,
+      message: `[${form.type}] ${form.subject ? form.subject + ': ' : ''}${form.message.trim()}`,
     });
     setSubmitting(false);
     if (error) {

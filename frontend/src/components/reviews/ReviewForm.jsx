@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Star, Camera, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { isEmail } from '../../lib/validation';
 
 export default function ReviewForm({ productId, productSlug, productName, onReviewSubmitted }) {
   const [name, setName] = useState('');
@@ -25,7 +25,7 @@ export default function ReviewForm({ productId, productSlug, productName, onRevi
     if (!name.trim()) newErrors.name = 'Name is required';
     if (!email.trim()) {
       newErrors.email = 'Email is required';
-    } else if (!EMAIL_REGEX.test(email.trim())) {
+    } else if (!isEmail(email)) {
       newErrors.email = 'Enter a valid email address';
     }
     if (rating === 0) newErrors.rating = 'Please select a star rating';
