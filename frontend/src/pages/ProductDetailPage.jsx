@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ShoppingCart, ExternalLink, ChevronRight, Package,
   CheckCircle, Phone, Mail, MessageSquare, Shield, Truck, Award,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getProductBySlug, trackProductView } from '../lib/queries';
+import { getProductBySlug, trackProductView, getGroupListings } from '../lib/queries';
+import SellerOffers from '../components/product/SellerOffers';
 import useCartStore from '../store/cartStore';
 import useContactStore from '../store/contactStore';
 import useAuthStore from '../store/authStore';
@@ -41,6 +42,76 @@ export default function ProductDetailPage() {
   const [reviews, setReviews] = useState([]);
   const [externalRefresh, setExternalRefresh] = useState(0);
 
+  // ── Multi-seller buy box ─────────────────────────────────────────────────
+  // Listings are cached alongside the key they were fetched for, so a previous
+  // product's sellers are never rendered against a new one — and the "still
+  // loading" case falls out of the comparison instead of needing its own state.
+  const [groupData, setGroupData] = useState({ key: null, rows: [] });
+  const [selectedId, setSelectedId] = useState(null);
+
+  // canonical_key === the row's own id is the "not the same product" marker
+  // set from the partner's price panel, and means a group of one.
+  const groupKey = useMemo(() => {
+    if (!product) return null;
+    if (product.canonical_key && product.canonical_key === product.id) return null;
+    return product.canonical_key || product.match_key || null;
+  }, [product]);
+
+  useEffect(() => {
+    if (!groupKey) return;
+
+    let cancelled = false;
+    // No excludePartnerId: customers see every seller, this listing included.
+    getGroupListings({ groupKey }).then(({ data, error }) => {
+      if (cancelled) return;
+      if (error) console.error('Seller offers failed:', error);
+      setGroupData({ key: groupKey, rows: error ? [] : data ?? [] });
+    });
+
+    return () => { cancelled = true; };
+  }, [groupKey]);
+
+  // Cheapest first, then the on-request listings.
+  const offers = useMemo(() => {
+    const rows = groupData.key === groupKey ? groupData.rows : [];
+    const priced = rows
+      .filter((r) => r.unit_price != null)
+      .sort((a, b) => Number(a.unit_price) - Number(b.unit_price));
+    const onRequest = rows.filter((r) => r.unit_price == null);
+    return [...priced, ...onRequest];
+  }, [groupData, groupKey]);
+
+  // Falling back to offers[0] means the cheapest seller is pre-selected without
+  // an effect writing state on every load.
+  const selectedOffer = useMemo(
+    () => offers.find((o) => o.id === selectedId) ?? offers[0] ?? null,
+    [offers, selectedId]
+  );
+
+  // The group rows carry only listing columns, so keep the fully-loaded product
+  // object whenever the selection is this page's own listing.
+  const activeListing =
+    selectedOffer && product && selectedOffer.id !== product.id ? selectedOffer : product;
+
+  // Null unless a second seller exists, so single-seller products keep the
+  // plain Offer node they have always emitted.
+  const aggregateOffer = useMemo(() => {
+    const priced = offers.filter((o) => o.unit_price != null).map((o) => Number(o.unit_price));
+    if (offers.length < 2 || priced.length === 0) return null;
+
+    return {
+      '@type': 'AggregateOffer',
+      'url': `${SITE_URL}/product/${product?.slug}`,
+      'priceCurrency': 'INR',
+      'lowPrice': Math.min(...priced),
+      'highPrice': Math.max(...priced),
+      'offerCount': offers.length,
+      'availability': 'https://schema.org/InStock',
+      'itemCondition': 'https://schema.org/NewCondition',
+      'areaServed': { '@type': 'Country', 'name': 'India' },
+    };
+  }, [offers, product?.slug]);
+
   const requestContact = useContactStore(s => s.requestContact);
   const { user, isAuthenticated } = useAuthStore();
 
@@ -73,8 +144,10 @@ export default function ProductDetailPage() {
     });
   }, [slug, isAuthenticated, user?.id]);
 
+  // activeListing, not product: the customer buys from the seller they picked
+  // in the offers list, which may not be the listing this URL belongs to.
   const handleAddToCart = () => {
-    requestContact(product, qty, {
+    requestContact(activeListing, qty, {
       onAfterAdd: () => {
         setAdded(true);
         setTimeout(() => setAdded(false), 2500);
@@ -83,7 +156,7 @@ export default function ProductDetailPage() {
   };
 
   const handleRequestQuote = () => {
-    requestContact(product, qty, {
+    requestContact(activeListing, qty, {
       onAfterAdd: () => navigate('/cart'),
     });
   };
@@ -141,7 +214,12 @@ export default function ProductDetailPage() {
     'mpn': product.model || undefined,
     'brand': product.brand_name ? { '@type': 'Brand', 'name': product.brand_name } : undefined,
     'category': product.category_name || undefined,
-    'offers': {
+    // With several sellers the page shows the cheapest offer, so a single
+    // Offer carrying this listing's own price would contradict what the
+    // customer sees. AggregateOffer is the schema.org form for that, and it
+    // only kicks in when a second seller actually exists — single-seller
+    // products keep the exact Offer they had before.
+    'offers': aggregateOffer ?? {
       '@type': 'Offer',
       'url': `${SITE_URL}/product/${product.slug}`,
       'priceCurrency': 'INR',
@@ -344,41 +422,48 @@ export default function ProductDetailPage() {
                   </p>
                 )}
 
-                {/* USJ Partner Info */}
-                {product.usj_partners && (
+                {/* Seller of the currently selected offer */}
+                {activeListing.usj_partners && (
                   <Link
-                    to={`/store/${product.usj_partners.slug}`}
+                    to={`/store/${activeListing.usj_partners.slug}`}
                     className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 bg-[#F8F9FA] hover:bg-[#EBF0F5] border border-[#E2E8F0] rounded-[6px] transition-colors"
                   >
-                    {product.usj_partners.logo_url && (
+                    {activeListing.usj_partners.logo_url && (
                       <img
-                        src={product.usj_partners.logo_url}
-                        alt={product.usj_partners.business_name}
+                        src={activeListing.usj_partners.logo_url}
+                        alt={activeListing.usj_partners.business_name}
                         className="w-5 h-5 object-contain"
                       />
                     )}
                     <span className="text-xs font-semibold text-[#0A1628]">
-                      Sold by {product.usj_partners.business_name}
+                      Sold by {activeListing.usj_partners.business_name}
                     </span>
                     <ChevronRight size={14} className="text-[#718096]" />
                   </Link>
                 )}
 
+                {/* Every seller for this product — renders nothing below 2 */}
+                <SellerOffers
+                  offers={offers}
+                  selectedId={selectedOffer?.id ?? null}
+                  onSelect={(o) => setSelectedId(o.id)}
+                />
+
                 {/* Price */}
                 <div className="mb-4 pb-4 border-b border-[#E2E8F0]">
-                  {product.unit_price != null ? (
+                  {activeListing.unit_price != null ? (
                     <div className="flex items-baseline gap-2 flex-wrap">
                       <p className="text-2xl font-bold text-[#0A1628]">
-                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(product.unit_price)}
+                        {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(activeListing.unit_price)}
                         <span className="text-sm font-normal text-[#718096] ml-2">per unit</span>
                       </p>
-                      {product.mrp != null && product.mrp > product.unit_price && (
+                      {activeListing.mrp != null && activeListing.mrp > activeListing.unit_price && (
                         <>
                           <span className="text-base text-[#94A3B8] line-through">
-                            {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(product.mrp)}
+                            {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(activeListing.mrp)}
                           </span>
                           <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                            {Math.round((1 - product.unit_price / product.mrp) * 100)}% off MRP
+                            {Math.round((1 - activeListing.unit_price / activeListing.mrp) * 100)}% off MRP
                           </span>
                         </>
                       )}
