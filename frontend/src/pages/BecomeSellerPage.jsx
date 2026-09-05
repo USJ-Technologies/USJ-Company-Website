@@ -19,6 +19,41 @@ const STEPS = [
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 
+// A GSTIN is 15 ALPHANUMERIC characters, not 15 digits:
+//   22AAAAA0000A1Z5
+//   \/ \________/\/\/
+//    |      |     | └─ 'Z' (fixed), then a checksum char
+//    |      |     └─── entity number, 1-9 or A-Z
+//    |      └───────── the holder's 10-character PAN
+//    └──────────────── 2-digit state code
+const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+
+// Typed in uppercase whatever the user does, so a lowercase paste of a
+// perfectly valid GSTIN or PAN is not rejected.
+const UPPERCASE_FIELDS = new Set(['gstNumber', 'panNumber', 'bankIfscCode']);
+
+// Indian mobile numbers are 10 digits starting 6-9. People paste them with
+// +91, a leading 0, spaces or dashes; all of that is stripped before checking
+// so a valid number is never rejected over formatting.
+const normalizePhone = (v) =>
+  String(v ?? '')
+    .replace(/[\s\-()]/g, '')
+    .replace(/^\+?91/, '')
+    .replace(/^0/, '');
+
+const PHONE_RE = /^[6-9]\d{9}$/;
+// Bank account numbers in India run 9-18 digits depending on the bank.
+const BANK_ACCOUNT_RE = /^\d{9,18}$/;
+// 4-letter bank code, a fixed 0, then a 6-character branch code.
+const IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+
+// Upper bounds are sanity checks, not business rules: they only catch a
+// mistyped figure, e.g. a phone number pasted into the SKU box.
+const MAX_SKUS = 1000000;
+const MAX_CAPACITY = 10000000;
+
 const inputCls =
   'w-full px-3 py-2 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C]';
 
@@ -98,21 +133,39 @@ const BecomeSellerPage = () => {
 
     if (which === 0) {
       if (!form.businessName.trim()) e.businessName = 'Business name is required';
-      if (!form.gstNumber.trim()) e.gstNumber = 'GST number is required';
-      else if (!/^\d{15}$/.test(form.gstNumber.replace(/\s/g, ''))) {
-        e.gstNumber = 'GST number must be 15 digits';
+      else if (form.businessName.trim().length < 3) {
+        e.businessName = 'Business name must be at least 3 characters';
       }
-      if (!form.panNumber.trim()) e.panNumber = 'PAN is required';
-      else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(form.panNumber)) {
+      const gst = form.gstNumber.replace(/\s/g, '').toUpperCase();
+      const pan = form.panNumber.replace(/\s/g, '').toUpperCase();
+
+      if (!gst) e.gstNumber = 'GST number is required';
+      else if (!GSTIN_RE.test(gst)) {
+        e.gstNumber = 'Invalid GSTIN (e.g., 22AAAAA0000A1Z5)';
+      }
+
+      if (!pan) e.panNumber = 'PAN is required';
+      else if (!PAN_RE.test(pan)) {
         e.panNumber = 'Invalid PAN format (e.g., AAAAA0000A)';
       }
-      if (!form.contactPerson.trim()) e.contactPerson = 'Contact person name is required';
-      if (!form.contactPhone.trim()) e.contactPhone = 'Phone is required';
-      else if (!/^\d{10}$/.test(form.contactPhone.replace(/\D/g, ''))) {
-        e.contactPhone = 'Phone must be 10 digits';
+
+      // Characters 3-12 of a GSTIN are the holder's PAN. Checking that the two
+      // agree catches a transposed digit that both formats accept on their own.
+      if (!e.gstNumber && !e.panNumber && gst.slice(2, 12) !== pan) {
+        e.gstNumber = "GSTIN doesn't match the PAN below — characters 3–12 should be the PAN";
       }
+      if (!form.contactPerson.trim()) e.contactPerson = 'Contact person name is required';
+      else if (form.contactPerson.trim().length < 2) {
+        e.contactPerson = 'Enter the full name of the contact person';
+      }
+
+      if (!form.contactPhone.trim()) e.contactPhone = 'Phone is required';
+      else if (!PHONE_RE.test(normalizePhone(form.contactPhone))) {
+        e.contactPhone = 'Enter a 10-digit Indian mobile number starting 6-9';
+      }
+
       if (!form.contactEmail.trim()) e.contactEmail = 'Email is required';
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail)) {
+      else if (!EMAIL_RE.test(form.contactEmail.trim())) {
         e.contactEmail = 'Invalid email format';
       }
       if (needsAccount) {
@@ -140,10 +193,15 @@ const BecomeSellerPage = () => {
       if (form.skuCount === '') e.skuCount = 'Approximate SKU count is required';
       else if (!/^\d+$/.test(String(form.skuCount)) || Number(form.skuCount) < 1) {
         e.skuCount = 'Enter a whole number of 1 or more';
+      } else if (Number(form.skuCount) > MAX_SKUS) {
+        e.skuCount = `That looks too high — enter at most ${MAX_SKUS.toLocaleString('en-IN')}`;
       }
+
       if (form.monthlyCapacity === '') e.monthlyCapacity = 'Monthly capacity is required';
       else if (!/^\d+$/.test(String(form.monthlyCapacity)) || Number(form.monthlyCapacity) < 1) {
         e.monthlyCapacity = 'Enter a whole number of 1 or more';
+      } else if (Number(form.monthlyCapacity) > MAX_CAPACITY) {
+        e.monthlyCapacity = `That looks too high — enter at most ${MAX_CAPACITY.toLocaleString('en-IN')}`;
       }
       if (!form.storefrontDescription.trim()) {
         e.storefrontDescription = 'Storefront description is required';
@@ -164,9 +222,14 @@ const BecomeSellerPage = () => {
     }
 
     if (which === 2) {
-      if (!form.bankAccountNumber.trim()) e.bankAccountNumber = 'Bank account number is required';
+      const account = form.bankAccountNumber.replace(/[\s-]/g, '');
+      if (!account) e.bankAccountNumber = 'Bank account number is required';
+      else if (!BANK_ACCOUNT_RE.test(account)) {
+        e.bankAccountNumber = 'Account number must be 9-18 digits';
+      }
+
       if (!form.bankIfscCode.trim()) e.bankIfscCode = 'IFSC code is required';
-      else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(form.bankIfscCode.trim().toUpperCase())) {
+      else if (!IFSC_RE.test(form.bankIfscCode.trim().toUpperCase())) {
         e.bankIfscCode = 'Invalid IFSC format (e.g., SBIN0001234)';
       }
       if (!agreedToTerms) e.agreedToTerms = 'You must agree to the seller terms and agreement';
@@ -182,7 +245,10 @@ const BecomeSellerPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [name]: UPPERCASE_FIELDS.has(name) ? value.toUpperCase() : value,
+    }));
     clearError(name);
   };
 
@@ -298,7 +364,7 @@ const BecomeSellerPage = () => {
 
       if (needsAccount) {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: form.contactEmail.trim(),
+          email: form.contactEmail.trim().toLowerCase(),
           password: form.password,
           options: { data: { name: form.contactPerson.trim() } },
         });
@@ -350,18 +416,20 @@ const BecomeSellerPage = () => {
         .insert({
           business_name: form.businessName,
           slug,
-          gst_number: form.gstNumber.replace(/\s/g, ''),
-          pan_number: form.panNumber,
+          // Stored normalised, so two applications with the same GSTIN typed
+          // differently are still comparable.
+          gst_number: form.gstNumber.replace(/\s/g, '').toUpperCase(),
+          pan_number: form.panNumber.replace(/\s/g, '').toUpperCase(),
           kyc_document_urls: [kycUrl],
           status: 'pending',
           contact_info: {
-            contact_person: form.contactPerson,
-            phone: form.contactPhone,
-            email: form.contactEmail,
-            bank_account_number: form.bankAccountNumber,
+            contact_person: form.contactPerson.trim(),
+            phone: normalizePhone(form.contactPhone),
+            email: form.contactEmail.trim().toLowerCase(),
+            bank_account_number: form.bankAccountNumber.replace(/[\s-]/g, ''),
             bank_ifsc_code: form.bankIfscCode.trim().toUpperCase(),
           },
-          storefront_description: form.storefrontDescription,
+          storefront_description: form.storefrontDescription.trim(),
           business_type: form.businessType,
           brands_carried: form.brandsCarried,
           sku_count: Number(form.skuCount),
@@ -565,7 +633,10 @@ const BecomeSellerPage = () => {
                       name="gstNumber"
                       value={form.gstNumber}
                       onChange={handleChange}
-                      placeholder="15 digits"
+                      maxLength={15}
+                      autoCapitalize="characters"
+                      spellCheck={false}
+                      placeholder="e.g., 22AAAAA0000A1Z5"
                       className={inputCls}
                     />
                     {errors.gstNumber && (
@@ -581,6 +652,9 @@ const BecomeSellerPage = () => {
                       name="panNumber"
                       value={form.panNumber}
                       onChange={handleChange}
+                      maxLength={10}
+                      autoCapitalize="characters"
+                      spellCheck={false}
                       placeholder="e.g., AAAAA0000A"
                       className={inputCls}
                     />
@@ -624,7 +698,10 @@ const BecomeSellerPage = () => {
                       name="contactPhone"
                       value={form.contactPhone}
                       onChange={handleChange}
-                      placeholder="10-digit number"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      maxLength={16}
+                      placeholder="10-digit mobile"
                       className={inputCls}
                     />
                     {errors.contactPhone && (
@@ -1018,7 +1095,10 @@ const BecomeSellerPage = () => {
                     name="bankAccountNumber"
                     value={form.bankAccountNumber}
                     onChange={handleChange}
-                    placeholder="Account number"
+                    inputMode="numeric"
+                    maxLength={18}
+                    autoComplete="off"
+                    placeholder="9-18 digits"
                     className={inputCls}
                   />
                   {errors.bankAccountNumber && (
@@ -1035,6 +1115,10 @@ const BecomeSellerPage = () => {
                     name="bankIfscCode"
                     value={form.bankIfscCode}
                     onChange={handleChange}
+                    maxLength={11}
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    autoComplete="off"
                     placeholder="e.g., SBIN0001234"
                     className={inputCls}
                   />
