@@ -26,6 +26,14 @@
 --    enforced with a trigger instead: non-admins attempting to
 --    change their own `role` get a hard error, regardless of
 --    which UPDATE policy let the statement through.
+--    SUPERSEDED — do not run this function definition standalone.
+--    The role list below predates the vendor → USJ Partner rename and
+--    still says 'vendor', which blocks Managers from approving partners
+--    ("You do not have permission to assign this role."). The current
+--    body lives in 20260906000003_fix_role_escalation_guard.sql. Left
+--    as-is here because rewriting applied history desyncs
+--    `supabase db reset` from the remote; a full replay ends on the
+--    corrected version.
 CREATE OR REPLACE FUNCTION public.prevent_role_self_escalation()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN

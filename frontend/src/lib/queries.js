@@ -113,6 +113,110 @@ export async function getFeaturedProducts(limit = 8) {
     .order('created_at', { ascending: false });
 }
 
+// ── Price Matching ───────────────────────────────────────────
+//
+// Listings of the same physical product across sellers share a group key:
+//     COALESCE(products.canonical_key, products.match_key)
+// `match_key` is a generated column (see migration 20260905000001);
+// `canonical_key` is set by the owning partner to confirm or reject a match.
+//
+// "Sellers" means both USJ Partners and USJ's own catalogue (partner_id IS
+// NULL) — a partner needs to see the platform's price for the same item too.
+
+const LISTING_COLUMNS =
+  'id, name, slug, model, brand_name, primary_image_url, unit_price, mrp, ' +
+  'canonical_key, match_key, partner_id, usj_partners(id, business_name, slug, status)';
+
+// Group keys contain A-Z0-9| (match keys) or UUID characters, so both cases
+// are allowed. Anything else could alter the meaning of the `.or()` filter
+// grammar below.
+const SAFE_GROUP_KEY = /^[A-Za-z0-9|-]+$/;
+const SAFE_UUID = /^[0-9a-fA-F-]{36}$/;
+
+/**
+ * Excludes the caller's own listings and any belonging to a partner who is not
+ * approved. This has to run client-side because the join to usj_partners is a
+ * LEFT join — an inner join would drop USJ's own rows, which have no partner.
+ * RLS (public_read_approved_usj_partners) already hides unapproved partners, so
+ * a null `usj_partners` on a row that HAS a partner_id means suspended/pending;
+ * a null partner_id means the row is USJ's own catalogue entry, which we keep.
+ */
+function visibleSellers(rows, excludePartnerId) {
+  return (rows ?? []).filter((r) => {
+    if (r.partner_id == null) return true;
+    if (excludePartnerId && r.partner_id === excludePartnerId) return false;
+    return r.usj_partners != null;
+  });
+}
+
+/**
+ * `partner_id.neq.X` on its own would silently drop USJ's own listings: SQL
+ * evaluates `NULL <> 'x'` as NULL rather than true, so those rows fail the
+ * filter. The explicit is.null branch keeps them in.
+ */
+function excludeOwnListings(query, excludePartnerId) {
+  if (!excludePartnerId || !SAFE_UUID.test(excludePartnerId)) return query;
+  return query.or(`partner_id.is.null,partner_id.neq.${excludePartnerId}`);
+}
+
+/**
+ * JS mirror of the SQL `match_key` generated column. Returns null when the
+ * model is blank — without a model there is no reliable auto-match key.
+ */
+export function buildMatchKey(brandName, model) {
+  const norm = (v) => String(v ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const m = norm(model);
+  if (!m) return null;
+  return `${norm(brandName)}|${m}`;
+}
+
+/**
+ * Every other seller's active listing in the same product group — other
+ * approved partners plus USJ's own catalogue.
+ */
+export async function getGroupListings({ groupKey, excludePartnerId }) {
+  if (!groupKey || !SAFE_GROUP_KEY.test(groupKey)) return { data: [], error: null };
+
+  const query = excludeOwnListings(
+    supabase
+      .from('products')
+      .select(LISTING_COLUMNS)
+      .eq('is_active', true)
+      // COALESCE(canonical_key, match_key) = groupKey, expressed in PostgREST
+      .or(`canonical_key.eq.${groupKey},and(canonical_key.is.null,match_key.eq.${groupKey})`)
+      .limit(50),
+    excludePartnerId
+  );
+
+  const { data, error } = await query;
+  if (error) return { data: [], error };
+  return { data: visibleSellers(data, excludePartnerId), error: null };
+}
+
+/**
+ * Free-text search over other sellers' active listings, for manually linking
+ * a product whose brand/model is spelled differently and so never auto-matches.
+ */
+export async function searchLinkCandidates({ term, excludePartnerId, limit = 10 }) {
+  const t = String(term ?? '').trim();
+  if (t.length < 2) return { data: [], error: null };
+
+  const w = t.replace(/[%_]/g, '\\$&'); // escape LIKE special chars
+  const query = excludeOwnListings(
+    supabase
+      .from('products')
+      .select(LISTING_COLUMNS)
+      .eq('is_active', true)
+      .or(`name.ilike.%${w}%,model.ilike.%${w}%`)
+      .limit(limit),
+    excludePartnerId
+  );
+
+  const { data, error } = await query;
+  if (error) return { data: [], error };
+  return { data: visibleSellers(data, excludePartnerId), error: null };
+}
+
 // ── Brands & Categories ───────────────────────────────────────
 
 export async function getBrands() {

@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import {
-  ArrowLeft, Save, Upload, Plus, X, Loader, Trash2,
+  ArrowLeft, Save, Upload, Plus, X, Loader, Trash2, TrendingDown,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useAuthStore from '../../store/authStore';
+import Modal from '../../components/ui/Modal';
+import PriceComparisonPanel from '../../components/partner/PriceComparisonPanel';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -55,6 +57,13 @@ const inputCls = 'w-full px-3 py-2 text-sm border border-[#E2E8F0] rounded-[6px]
 const addBtnCls = 'px-3 py-2 text-xs font-semibold bg-[#0A1628] text-white rounded-[6px] hover:bg-[#1A2E4A] transition-colors whitespace-nowrap';
 const removeBtnCls = 'p-1 text-[#718096] hover:text-red-500 transition-colors flex-shrink-0';
 
+const inr = (v) =>
+  new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(v);
+
 function SectionHeader({ title }) {
   return (
     <div className="flex items-center gap-2 mb-3">
@@ -89,12 +98,23 @@ export default function PartnerAddProductPage() {
   const [uploading, setUploading] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(isEditing);
 
+  // Generated up front so "No — different product" has an id to write into
+  // canonical_key before the row exists (see PriceComparisonPanel).
+  const [newProductId] = useState(() => crypto.randomUUID());
+  const ownProductId = isEditing ? productId : newProductId;
+
+  // Reported by PriceComparisonPanel; gates the save.
+  const [comparison, setComparison] = useState({
+    groupKey: null, count: 0, lowest: null, lowestPartnerName: null,
+  });
+  const [priceWarning, setPriceWarning] = useState(null);
+
   // Form state
   const [form, setForm] = useState({
     name: '', model: '', brand_name: '', description: '',
     slug: '', key_features: [], specifications: {}, in_box: [], faqs: [],
     primary_image_url: '', product_url: '',
-    is_active: true, unit_price: '', mrp: '',
+    is_active: true, unit_price: '', mrp: '', canonical_key: '',
   });
 
   // Temp input state
@@ -137,6 +157,7 @@ export default function PartnerAddProductPage() {
           is_active: data.is_active ?? true,
           unit_price: data.unit_price ?? '',
           mrp: data.mrp ?? '',
+          canonical_key: data.canonical_key ?? '',
         });
       } catch (error) {
         console.error('Error loading product:', error);
@@ -191,6 +212,16 @@ export default function PartnerAddProductPage() {
   };
   const removeFaq = (i) => set('faqs', form.faqs.filter((_, idx) => idx !== i));
 
+  // ── Price comparison ─────────────────────────────────────────────────────
+
+  const handleUseLowestPrice = useCallback((price) => {
+    setForm((f) => ({ ...f, unit_price: String(price) }));
+  }, []);
+
+  const handleCanonicalKeyChange = useCallback((key) => {
+    setForm((f) => ({ ...f, canonical_key: key }));
+  }, []);
+
   // ── Image upload ─────────────────────────────────────────────────────────
 
   const uploadFile = async (file) => {
@@ -215,10 +246,11 @@ export default function PartnerAddProductPage() {
 
   // ── Save product ─────────────────────────────────────────────────────────
 
-  const handleSave = async () => {
-    if (!form.name.trim()) { toast.error('Product name is required'); return; }
-    if (!form.brand_name.trim()) { toast.error('Brand name is required'); return; }
-    if (!form.slug.trim()) { toast.error('Slug is required'); return; }
+  const saveProduct = async (priceOverride) => {
+    const unitPrice =
+      priceOverride != null
+        ? priceOverride
+        : form.unit_price !== '' ? parseFloat(form.unit_price) : null;
 
     setSaving(true);
     try {
@@ -237,8 +269,9 @@ export default function PartnerAddProductPage() {
         is_active: form.is_active,
         is_featured: false,
         is_b2b: false,
-        unit_price: form.unit_price ? parseFloat(form.unit_price) : null,
+        unit_price: unitPrice,
         mrp: form.mrp ? parseFloat(form.mrp) : null,
+        canonical_key: form.canonical_key || null,
         partner_id: partnerId,
         updated_at: new Date().toISOString(),
       };
@@ -255,7 +288,7 @@ export default function PartnerAddProductPage() {
         if (error) throw error;
         if (!data) throw new Error('Product not found or you do not have permission to update it');
       } else {
-        const { error } = await supabase.from('products').insert(row);
+        const { error } = await supabase.from('products').insert({ ...row, id: newProductId });
         if (error) throw error;
       }
 
@@ -271,6 +304,24 @@ export default function PartnerAddProductPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSave = () => {
+    if (!form.name.trim()) { toast.error('Product name is required'); return; }
+    if (!form.brand_name.trim()) { toast.error('Brand name is required'); return; }
+    if (!form.slug.trim()) { toast.error('Slug is required'); return; }
+
+    // Advisory check against the lowest price among other sellers. The partner
+    // can always override — this only makes sure they saw it.
+    const { lowest, lowestPartnerName } = comparison;
+    const myPrice = form.unit_price === '' ? null : parseFloat(form.unit_price);
+
+    if (lowest != null && (myPrice == null || myPrice > lowest)) {
+      setPriceWarning({ lowest, lowestPartnerName, myPrice });
+      return;
+    }
+
+    saveProduct();
   };
 
   const specEntries = Object.entries(form.specifications);
@@ -352,6 +403,18 @@ export default function PartnerAddProductPage() {
             <input type="number" value={form.mrp} onChange={(e) => set('mrp', e.target.value)} className={inputCls} placeholder="0.00" />
           </FieldRow>
         </div>
+
+        <PriceComparisonPanel
+          brandName={form.brand_name}
+          model={form.model}
+          unitPrice={form.unit_price}
+          canonicalKey={form.canonical_key}
+          ownProductId={ownProductId}
+          partnerId={partnerId}
+          onUseLowestPrice={handleUseLowestPrice}
+          onCanonicalKeyChange={handleCanonicalKeyChange}
+          onComparisonChange={setComparison}
+        />
       </div>
 
       {/* ── Product Image ── */}
@@ -506,6 +569,105 @@ export default function PartnerAddProductPage() {
           {saving ? 'Saving…' : isEditing ? 'Update Product' : 'Save Product'}
         </button>
       </div>
+
+      {/* ── Price warning ── */}
+      <Modal
+        isOpen={Boolean(priceWarning)}
+        onClose={() => setPriceWarning(null)}
+        title="Another seller lists this cheaper"
+        size="md"
+      >
+        {priceWarning && (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <TrendingDown size={18} className="text-amber-600" />
+              </div>
+              <div className="text-sm text-[#4A5568]">
+                {priceWarning.myPrice == null ? (
+                  <p>
+                    You haven't set a selling price, so this will show as{' '}
+                    <span className="font-semibold">Price on Request</span>. Customers can't
+                    compare it against{' '}
+                    <span className="font-bold text-[#0A1628]">{inr(priceWarning.lowest)}</span>
+                    {priceWarning.lowestPartnerName
+                      ? ` from ${priceWarning.lowestPartnerName}`
+                      : ''}
+                    .
+                  </p>
+                ) : (
+                  <p>
+                    Your price is{' '}
+                    <span className="font-bold text-[#0A1628]">
+                      {inr(priceWarning.myPrice - priceWarning.lowest)}
+                    </span>{' '}
+                    above the lowest price for this product.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-[#F8F9FA] border border-[#E2E8F0] rounded-lg p-3">
+                <p className="text-[10px] font-semibold text-[#718096] uppercase tracking-wider">
+                  Your price
+                </p>
+                <p className="text-lg font-bold text-[#0A1628] mt-0.5">
+                  {priceWarning.myPrice == null ? 'On request' : inr(priceWarning.myPrice)}
+                </p>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider">
+                  Lowest available
+                </p>
+                <p className="text-lg font-bold text-[#0A1628] mt-0.5">
+                  {inr(priceWarning.lowest)}
+                </p>
+                {priceWarning.lowestPartnerName && (
+                  <p className="text-[10px] text-amber-800 mt-0.5 truncate">
+                    {priceWarning.lowestPartnerName}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <p className="text-xs text-[#718096]">
+              Matching the lowest price wins more orders, but you can list at any price you like.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end pt-1">
+              <button
+                onClick={() => setPriceWarning(null)}
+                className="px-4 py-2 text-sm font-semibold text-[#718096] border border-[#E2E8F0] rounded-[6px] hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setPriceWarning(null); saveProduct(); }}
+                disabled={saving}
+                className="px-4 py-2 text-sm font-semibold text-[#4A5568] border border-[#E2E8F0] rounded-[6px] hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                {priceWarning.myPrice == null
+                  ? 'List without a price'
+                  : `List at ${inr(priceWarning.myPrice)} anyway`}
+              </button>
+              <button
+                onClick={() => {
+                  const lowest = priceWarning.lowest;
+                  setPriceWarning(null);
+                  handleUseLowestPrice(lowest);
+                  saveProduct(lowest);
+                }}
+                disabled={saving}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 text-white text-sm font-semibold rounded-[6px] hover:bg-amber-700 transition-colors disabled:opacity-50"
+              >
+                {saving ? <Loader size={14} className="animate-spin" /> : <TrendingDown size={14} />}
+                Use {inr(priceWarning.lowest)} and list
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

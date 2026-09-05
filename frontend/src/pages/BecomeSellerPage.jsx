@@ -12,6 +12,7 @@ const BecomeSellerPage = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
     businessName: '',
     gstNumber: '',
@@ -19,6 +20,8 @@ const BecomeSellerPage = () => {
     contactPerson: '',
     contactPhone: '',
     contactEmail: user?.email || '',
+    password: '',
+    confirmPassword: '',
     bankAccountNumber: '',
     bankIfscCode: '',
     storefrontDescription: '',
@@ -26,6 +29,10 @@ const BecomeSellerPage = () => {
   });
 
   const [kycFileName, setKycFileName] = useState('');
+
+  // Applicants don't need an existing customer account — when they're signed
+  // out, the contact email and a password become their new partner login.
+  const needsAccount = !isAuthenticated;
 
   // Validation rules
   const validateForm = () => {
@@ -48,6 +55,13 @@ const BecomeSellerPage = () => {
     if (!form.contactEmail.trim()) newErrors.contactEmail = 'Email is required';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail)) {
       newErrors.contactEmail = 'Invalid email format';
+    }
+    if (needsAccount) {
+      if (!form.password) newErrors.password = 'Password is required';
+      else if (form.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+      if (form.confirmPassword !== form.password) {
+        newErrors.confirmPassword = 'Passwords do not match';
+      }
     }
     if (!form.bankAccountNumber.trim()) newErrors.bankAccountNumber = 'Bank account number is required';
     if (!form.bankIfscCode.trim()) newErrors.bankIfscCode = 'IFSC code is required';
@@ -94,15 +108,44 @@ const BecomeSellerPage = () => {
       return;
     }
 
-    if (!isAuthenticated) {
-      toast.error('Please log in or register first');
-      navigate('/login');
-      return;
-    }
-
     setLoading(true);
 
     try {
+      // 0. Signed-out applicants get an account created from their contact
+      //    details. The partner row and KYC upload both need a session, so
+      //    this has to complete before anything else.
+      let accountId = user?.id;
+
+      if (needsAccount) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: form.contactEmail.trim(),
+          password: form.password,
+          options: { data: { name: form.contactPerson.trim() } },
+        });
+
+        if (signUpError) {
+          // Most commonly "User already registered"
+          setErrors((prev) => ({ ...prev, contactEmail: signUpError.message }));
+          toast.error(
+            /registered|exists/i.test(signUpError.message)
+              ? 'An account with this email already exists — please log in first.'
+              : signUpError.message
+          );
+          setLoading(false);
+          return;
+        }
+
+        // No session means the project requires email confirmation, so we
+        // cannot write the application yet.
+        if (!signUpData.session) {
+          toast.error('Check your email to confirm your address, then sign in and re-apply.');
+          setLoading(false);
+          return;
+        }
+
+        accountId = signUpData.user.id;
+      }
+
       // 1. Generate partner slug from business name
       const slug = form.businessName
         .toLowerCase()
@@ -112,8 +155,8 @@ const BecomeSellerPage = () => {
         .replace(/-{2,}/g, '-') + '-' + Date.now();
 
       // 2. Upload KYC file to partner-kyc storage
-      const fileName = `${user.id}/${Date.now()}-${form.kycFile.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const fileName = `${accountId}/${Date.now()}-${form.kycFile.name}`;
+      const { error: uploadError } = await supabase.storage
         .from('partner-kyc')
         .upload(fileName, form.kycFile);
 
@@ -150,21 +193,29 @@ const BecomeSellerPage = () => {
 
       if (partnerError) throw partnerError;
 
-      // 5. Link user profile to partner (do not change role to partner until admin approves)
+      // 5. Link user profile to partner (role stays 'customer' until an admin
+      //    approves — PartnerRoute only admits role 'usj_partner').
+      //    .select().single() makes a zero-row update fail loudly rather than
+      //    silently leaving the application unlinked.
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({
-          partner_id: partnerData.id,
-        })
-        .eq('id', user.id);
+        .update({ partner_id: partnerData.id })
+        .eq('id', accountId)
+        .select('id')
+        .single();
 
       if (profileError) throw profileError;
 
-      // 6. Success! Refresh user profile and navigate
-      await useAuthStore.getState()._applySession(useAuthStore.getState().session);
+      // 6. Refresh the cached profile so the pending state renders on return.
+      //    Read the session from the client rather than the store — a brand new
+      //    signUp session may not have propagated through onAuthStateChange yet.
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session) {
+        await useAuthStore.getState()._applySession(sessionData.session);
+      }
 
-      toast.success('Your USJ Partner application has been submitted! We will review it shortly.');
-      navigate('/partner/dashboard');
+      toast.success('Your USJ Partner application has been submitted!');
+      setSubmitted(true);
     } catch (error) {
       console.error('USJ Partner registration error:', error);
       toast.error(error.message || 'Failed to submit application');
@@ -173,29 +224,29 @@ const BecomeSellerPage = () => {
     }
   };
 
-  if (!isAuthenticated) {
+  // An application exists but the role is still 'customer' — PartnerRoute would
+  // bounce them straight back to the login page, so send them here instead of
+  // to the dashboard.
+  const awaitingReview = submitted || (profile?.partner_id && profile?.role !== 'usj_partner');
+
+  if (awaitingReview && profile?.role !== 'usj_partner') {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-8 text-center">
-          <AlertCircle size={40} className="mx-auto text-gray-400 mb-4" />
-          <h2 className="text-lg font-semibold text-[#0A1628] mb-2">Sign in to continue</h2>
+          <CheckCircle size={40} className="mx-auto text-green-500 mb-4" />
+          <h2 className="text-lg font-semibold text-[#0A1628] mb-2">Application received</h2>
           <p className="text-sm text-[#718096] mb-6">
-            You need to be logged in to apply as a seller. Please log in or create an account first.
+            Thanks — your USJ Partner application is with our team. We review applications within
+            2–3 business days and will email you at{' '}
+            <span className="font-semibold text-[#0A1628]">{form.contactEmail || user?.email}</span>{' '}
+            once it's approved. Your partner dashboard unlocks at that point.
           </p>
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={() => navigate('/login')}
-              className="px-4 py-2 bg-[#0A1628] text-white text-sm font-semibold rounded-[6px] hover:bg-[#1A2E4A] transition-colors"
-            >
-              Log In
-            </button>
-            <button
-              onClick={() => navigate('/register')}
-              className="px-4 py-2 bg-[#E2E8F0] text-[#0A1628] text-sm font-semibold rounded-[6px] hover:bg-[#CBD5E0] transition-colors"
-            >
-              Register
-            </button>
-          </div>
+          <button
+            onClick={() => navigate('/')}
+            className="px-4 py-2 bg-[#0A1628] text-white text-sm font-semibold rounded-[6px] hover:bg-[#1A2E4A] transition-colors"
+          >
+            Back to Home
+          </button>
         </div>
       </div>
     );
@@ -228,6 +279,15 @@ const BecomeSellerPage = () => {
         <p className="text-[#718096]">
           Join USJ Technologies marketplace and reach thousands of customers. Fill in your business details below to get started.
         </p>
+        {needsAccount && (
+          <p className="text-sm text-[#718096] mt-3 flex items-center gap-1.5">
+            <AlertCircle size={14} className="text-[#C9A84C] flex-shrink-0" />
+            No account needed — one is created for you. Already have one?{' '}
+            <Link to="/login" className="font-semibold text-[#0A1628] hover:underline">
+              Log in
+            </Link>
+          </p>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-[#E2E8F0] p-8 space-y-6">
@@ -351,6 +411,53 @@ const BecomeSellerPage = () => {
                 )}
               </div>
             </div>
+
+            {/* Password — only for applicants without an account yet */}
+            {needsAccount && (
+              <>
+                <p className="text-xs text-[#718096]">
+                  Choose a password — you'll use the email above to sign in once your application is
+                  approved.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#0A1628] mb-1">
+                      Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      name="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      autoComplete="new-password"
+                      placeholder="At least 6 characters"
+                      className="w-full px-3 py-2 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
+                    />
+                    {errors.password && (
+                      <p className="text-xs text-red-500 mt-1">{errors.password}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#0A1628] mb-1">
+                      Confirm Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      value={form.confirmPassword}
+                      onChange={handleChange}
+                      autoComplete="new-password"
+                      placeholder="Re-enter password"
+                      className="w-full px-3 py-2 text-sm border border-[#E2E8F0] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
+                    />
+                    {errors.confirmPassword && (
+                      <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

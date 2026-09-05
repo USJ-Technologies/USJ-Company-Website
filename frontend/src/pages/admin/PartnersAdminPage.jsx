@@ -24,6 +24,8 @@ const BADGE_COLOR = {
   approved: 'bg-green-100 text-green-800',
   suspended: 'bg-red-100 text-red-800',
   rejected: 'bg-gray-100 text-gray-800',
+  // Set by close_partner_for_account_deletion when a user deletes their account
+  closed: 'bg-gray-100 text-gray-500',
 };
 
 export default function PartnersAdminPage() {
@@ -68,112 +70,88 @@ export default function PartnersAdminPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleApprovePartner = async (partner) => {
-    if (!window.confirm(`Approve USJ Partner "${partner.business_name}"? This will grant them USJ Partner access.`)) {
-      return;
-    }
+  // Status changes go through set_partner_status (migration 20260906000001)
+  // rather than a direct table UPDATE: approving also has to promote the
+  // applicant's profile to role 'usj_partner', and only admins can write
+  // another user's profile row under RLS. The RPC does both writes in one
+  // transaction and authorises on is_manager_or_above().
+  const reviewPartner = async ({ partner, status, notes = null, confirmMessage, successMessage }) => {
+    if (confirmMessage && !window.confirm(confirmMessage)) return;
 
     setActionLoading(true);
     try {
-      // 1. Update partner status to 'approved'
-      const { error: partnerError } = await supabase
-        .from('usj_partners')
-        .update({ status: 'approved' })
-        .eq('id', partner.id);
+      const { data, error } = await supabase.rpc('set_partner_status', {
+        p_partner_id: partner.id,
+        p_status: status,
+        p_notes: notes,
+      });
 
-      if (partnerError) throw partnerError;
+      if (error) throw error;
 
-      // 2. Update local state
       setPartners((prev) =>
-        prev.map((v) => (v.id === partner.id ? { ...v, status: 'approved' } : v))
-      );
-
-      setShowDetailModal(false);
-      setSelectedPartner(null);
-      toast.success(`USJ Partner "${partner.business_name}" approved!`);
-    } catch (error) {
-      console.error('Error approving USJ Partner:', error);
-      toast.error('Failed to approve USJ Partner');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleRejectPartner = async (partner, reason) => {
-    if (!reason.trim()) {
-      toast.error('Please provide a reason for rejection');
-      return;
-    }
-
-    if (
-      !window.confirm(
-        `Reject USJ Partner "${partner.business_name}"? They will be notified and can reapply.`
-      )
-    ) {
-      return;
-    }
-
-    setActionLoading(true);
-    try {
-      // 1. Update partner status to 'rejected'
-      const { error: partnerError } = await supabase
-        .from('usj_partners')
-        .update({
-          status: 'rejected',
-          contact_info: {
-            ...partner.contact_info,
-            rejection_reason: reason,
-          },
-        })
-        .eq('id', partner.id);
-
-      if (partnerError) throw partnerError;
-
-      // 2. Update local state
-      setPartners((prev) =>
-        prev.map((v) => (v.id === partner.id ? { ...v, status: 'rejected' } : v))
+        prev.map((v) => (v.id === partner.id ? { ...v, ...(data?.partner ?? { status }) } : v))
       );
 
       setShowDetailModal(false);
       setSelectedPartner(null);
       setReviewNotes('');
-      toast.success(`USJ Partner "${partner.business_name}" rejected`);
+      toast.success(successMessage);
+
+      // The partner row moved but no linked account did — the applicant can
+      // never sign in, so say so instead of reporting a clean success.
+      if (status === 'approved' && data?.profiles_updated === 0) {
+        toast(
+          `No user account is linked to "${partner.business_name}", so nothing was promoted. ` +
+            `Check that their profile's partner_id is set.`,
+          { icon: '⚠️', duration: 8000 }
+        );
+      }
     } catch (error) {
-      console.error('Error rejecting USJ Partner:', error);
-      toast.error('Failed to reject USJ Partner');
+      console.error(`Error setting USJ Partner status to ${status}:`, error);
+      // Postgres splits an error across message/details/hint, and PostgREST
+      // passes all three through. A bare `message` often names the problem
+      // without naming the statement that raised it, so show the lot.
+      const detail = [error.details, error.hint].filter(Boolean).join(' — ');
+      toast.error(
+        [error.message || `Failed to set status to ${status}`, detail].filter(Boolean).join(' — '),
+        { duration: 8000 }
+      );
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleSuspendPartner = async (partner) => {
-    if (!window.confirm(`Suspend USJ Partner "${partner.business_name}"?`)) {
+  const handleApprovePartner = (partner) =>
+    reviewPartner({
+      partner,
+      status: 'approved',
+      notes: reviewNotes,
+      confirmMessage: `Approve USJ Partner "${partner.business_name}"? This will grant them USJ Partner access.`,
+      successMessage: `USJ Partner "${partner.business_name}" approved!`,
+    });
+
+  const handleRejectPartner = (partner, reason) => {
+    if (!reason.trim()) {
+      toast.error('Please provide a reason for rejection');
       return;
     }
-
-    setActionLoading(true);
-    try {
-      const { error } = await supabase
-        .from('usj_partners')
-        .update({ status: 'suspended' })
-        .eq('id', partner.id);
-
-      if (error) throw error;
-
-      setPartners((prev) =>
-        prev.map((v) => (v.id === partner.id ? { ...v, status: 'suspended' } : v))
-      );
-
-      setShowDetailModal(false);
-      setSelectedPartner(null);
-      toast.success(`USJ Partner "${partner.business_name}" suspended`);
-    } catch (error) {
-      console.error('Error suspending USJ Partner:', error);
-      toast.error('Failed to suspend USJ Partner');
-    } finally {
-      setActionLoading(false);
-    }
+    return reviewPartner({
+      partner,
+      status: 'rejected',
+      notes: reason,
+      confirmMessage: `Reject USJ Partner "${partner.business_name}"? They will be notified and can reapply.`,
+      successMessage: `USJ Partner "${partner.business_name}" rejected`,
+    });
   };
+
+  const handleSuspendPartner = (partner) =>
+    reviewPartner({
+      partner,
+      status: 'suspended',
+      notes: reviewNotes,
+      confirmMessage: `Suspend USJ Partner "${partner.business_name}"? They will lose dashboard access immediately.`,
+      successMessage: `USJ Partner "${partner.business_name}" suspended`,
+    });
 
   if (!canManagePartners) {
     return (
@@ -394,7 +372,10 @@ export default function PartnersAdminPage() {
               {selectedPartner.status === 'pending' && (
                 <div>
                   <h3 className="text-sm font-bold text-[#0A1628] mb-3 uppercase tracking-wider">
-                    Review Notes
+                    Review Notes{' '}
+                    <span className="normal-case tracking-normal font-medium text-[#718096]">
+                      — required to reject
+                    </span>
                   </h3>
                   <textarea
                     value={reviewNotes}
@@ -419,7 +400,7 @@ export default function PartnersAdminPage() {
                   </button>
                   <button
                     onClick={() => handleRejectPartner(selectedPartner, reviewNotes)}
-                    disabled={actionLoading || !reviewNotes.trim()}
+                    disabled={actionLoading}
                     className="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-[6px] hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {actionLoading ? <Loader size={16} className="animate-spin" /> : <XCircle size={16} />}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import {
-  LayoutDashboard, Package, ShoppingCart, Menu, X, LogOut, ChevronRight,
+  LayoutDashboard, Package, ShoppingCart, Menu, LogOut, ChevronRight,
 } from 'lucide-react';
 import { ROUTES } from '../../config/app';
 import useAuthStore from '../../store/authStore';
@@ -20,7 +20,7 @@ function Sidebar({ user, onClose }) {
   return (
     <aside className="h-full flex flex-col" style={{ backgroundColor: '#0A1628', width: 240 }}>
       <div className="px-5 py-5 border-b" style={{ borderColor: '#1A2E4A' }}>
-        <Link to={ROUTES.HOME} className="block" onClick={onClose}>
+        <Link to={ROUTES.PARTNER_DASHBOARD} className="block" onClick={onClose}>
           <span className="text-lg font-bold text-white">USJ</span>
           <span className="text-lg font-bold text-[#C9A84C]"> Partners</span>
         </Link>
@@ -119,14 +119,6 @@ export default function PartnerLayout() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              to={ROUTES.HOME}
-              className="text-sm text-[#4A5568] hover:text-[#0A1628] transition-colors hidden sm:block"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View Site →
-            </Link>
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
               style={{ backgroundColor: '#C9A84C', color: '#0A1628' }}
