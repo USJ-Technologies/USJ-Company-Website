@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import useAuthStore from '../../store/authStore';
 import Modal from '../../components/ui/Modal';
 import PriceComparisonPanel from '../../components/partner/PriceComparisonPanel';
+import { fetchPartnerCategoryLinks } from '../../lib/partnerCatalog';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -115,7 +116,17 @@ export default function PartnerAddProductPage() {
     slug: '', key_features: [], specifications: {}, in_box: [], faqs: [],
     primary_image_url: '', product_url: '',
     is_active: true, unit_price: '', mrp: '', canonical_key: '',
+    partner_category_id: '',
   });
+
+  // The segments this partner registered for. RLS
+  // (partner_insert_own_products / partner_update_own_products) rejects any
+  // write outside this set, so the select is the only valid source.
+  const [segments, setSegments] = useState([]);
+  // Starts true and is only ever cleared by the fetch below. The "no linked
+  // partner account" case never enters that effect, so it is handled as its
+  // own branch in the Category field rather than as a loading state.
+  const [segmentsLoading, setSegmentsLoading] = useState(true);
 
   // Temp input state
   const [newFeature, setNewFeature] = useState('');
@@ -126,6 +137,17 @@ export default function PartnerAddProductPage() {
   const [newFaqA, setNewFaqA] = useState('');
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+
+  useEffect(() => {
+    if (!partnerId) return;
+
+    let cancelled = false;
+    fetchPartnerCategoryLinks(partnerId)
+      .then((rows) => { if (!cancelled) setSegments(rows); })
+      .finally(() => { if (!cancelled) setSegmentsLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [partnerId]);
 
   useEffect(() => {
     if (!isEditing || !partnerId) return;
@@ -158,6 +180,7 @@ export default function PartnerAddProductPage() {
           unit_price: data.unit_price ?? '',
           mrp: data.mrp ?? '',
           canonical_key: data.canonical_key ?? '',
+          partner_category_id: data.partner_category_id ?? '',
         });
       } catch (error) {
         console.error('Error loading product:', error);
@@ -272,6 +295,7 @@ export default function PartnerAddProductPage() {
         unit_price: unitPrice,
         mrp: form.mrp ? parseFloat(form.mrp) : null,
         canonical_key: form.canonical_key || null,
+        partner_category_id: form.partner_category_id || null,
         partner_id: partnerId,
         updated_at: new Date().toISOString(),
       };
@@ -310,6 +334,14 @@ export default function PartnerAddProductPage() {
     if (!form.name.trim()) { toast.error('Product name is required'); return; }
     if (!form.brand_name.trim()) { toast.error('Brand name is required'); return; }
     if (!form.slug.trim()) { toast.error('Slug is required'); return; }
+
+    // Checked here as well as by RLS: a policy violation surfaces as an
+    // opaque 42501, which tells the partner nothing about what to fix.
+    if (!form.partner_category_id) { toast.error('Select a category for this product'); return; }
+    if (!segments.some((s) => s.id === form.partner_category_id)) {
+      toast.error('Pick a category you are registered to sell in');
+      return;
+    }
 
     // Advisory check against the lowest price among other sellers. The partner
     // can always override — this only makes sure they saw it.
@@ -380,6 +412,50 @@ export default function PartnerAddProductPage() {
               <input value={form.model} onChange={(e) => set('model', e.target.value)} className={inputCls} placeholder="e.g. AC23" />
             </FieldRow>
           </div>
+
+          <FieldRow label="Category" required>
+            {!partnerId ? (
+              <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-[6px] p-3">
+                Your account isn't linked to a partner profile, so categories can't be loaded.
+                Contact USJ Technologies.
+              </div>
+            ) : segmentsLoading ? (
+              <div className="flex items-center gap-2 text-sm text-[#718096] py-2">
+                <Loader size={14} className="animate-spin" /> Loading your categories…
+              </div>
+            ) : segments.length === 0 ? (
+              <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-[6px] p-3">
+                You have no registered categories, so you can't list products yet. Contact USJ
+                Technologies to have categories added to your partner account.
+              </div>
+            ) : (
+              <>
+                <select
+                  value={form.partner_category_id}
+                  onChange={(e) => set('partner_category_id', e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="">Select a category…</option>
+                  {segments.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-[#718096] mt-0.5">
+                  Only the categories you registered for at signup.
+                </p>
+                {/* Editing a product whose category was later removed from the
+                    registration: the row still loads, but it cannot be saved
+                    until a currently-registered category is chosen. */}
+                {form.partner_category_id &&
+                  !segments.some((s) => s.id === form.partner_category_id) && (
+                    <p className="text-xs text-amber-700 mt-1">
+                      This product's original category is no longer on your registration. Choose
+                      one of your current categories to save.
+                    </p>
+                  )}
+              </>
+            )}
+          </FieldRow>
 
           <FieldRow label="Slug" required>
             <input value={form.slug} onChange={(e) => set('slug', e.target.value)} className={inputCls} />

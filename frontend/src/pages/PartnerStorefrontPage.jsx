@@ -5,6 +5,7 @@ import { Grid, List, ChevronLeft, Star, Package, MapPin, Mail, Phone } from 'luc
 import toast from 'react-hot-toast';
 import Skeleton from '../components/ui/Skeleton';
 import SEOHead from '../components/seo/SEOHead';
+import { fetchPartnerCategoryLinks } from '../lib/partnerCatalog';
 
 const PAGE_SIZE = 20;
 
@@ -19,6 +20,7 @@ export default function PartnerStorefrontPage() {
   const [viewMode, setViewMode] = useState('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [segments, setSegments] = useState([]);
 
   useEffect(() => {
     fetchPartner();
@@ -28,6 +30,21 @@ export default function PartnerStorefrontPage() {
     if (!partner?.id) return;
     fetchProducts();
   }, [partner?.id, currentPage, searchTerm]);
+
+  // Registered segments — public for approved partners only, and this page
+  // already refuses to render anything else.
+  useEffect(() => {
+    if (!partner?.id) return;
+
+    let cancelled = false;
+    fetchPartnerCategoryLinks(partner.id).then((rows) => {
+      if (!cancelled) setSegments(rows);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [partner?.id]);
 
   const fetchPartner = async () => {
     try {
@@ -135,6 +152,23 @@ export default function PartnerStorefrontPage() {
                   <p className="text-[#718096] mb-4 max-w-2xl">
                     {partner.storefront_description}
                   </p>
+
+                  {/* Registered segments */}
+                  {segments.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <span className="text-xs font-semibold text-[#718096] uppercase tracking-wider">
+                        Deals in
+                      </span>
+                      {segments.map((s) => (
+                        <span
+                          key={s.id}
+                          className="px-2.5 py-1 text-xs font-semibold bg-[#F8F9FA] border border-[#E2E8F0] rounded-full text-[#0A1628]"
+                        >
+                          {s.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Contact Info */}
                   <div className="flex flex-wrap gap-6 text-sm">

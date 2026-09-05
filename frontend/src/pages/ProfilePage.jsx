@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import { User, Mail, Phone, Building2, Edit2, LogOut, ShieldCheck, Save, X, AlertTriangle, Trash2, Loader } from 'lucide-react';
+import PartnerApplicationStatus from '../components/partner/PartnerApplicationStatus';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -130,6 +131,9 @@ export default function ProfilePage() {
             </button>
           </div>
         </div>
+
+        {/* Partner application state — renders nothing when there is none */}
+        <PartnerApplicationStatus />
 
         {/* Info card */}
         <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
