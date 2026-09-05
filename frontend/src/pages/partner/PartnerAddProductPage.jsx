@@ -9,6 +9,7 @@ import useAuthStore from '../../store/authStore';
 import Modal from '../../components/ui/Modal';
 import PriceComparisonPanel from '../../components/partner/PriceComparisonPanel';
 import { fetchPartnerCategoryLinks } from '../../lib/partnerCatalog';
+import { isPositiveAmount } from '../../lib/validation';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -340,6 +341,24 @@ export default function PartnerAddProductPage() {
     if (!form.partner_category_id) { toast.error('Select a category for this product'); return; }
     if (!segments.some((s) => s.id === form.partner_category_id)) {
       toast.error('Pick a category you are registered to sell in');
+      return;
+    }
+
+    // Prices were written straight through: a negative selling price, or an
+    // MRP below it (which renders as a negative discount), both saved fine.
+    if (form.unit_price !== '' && !isPositiveAmount(form.unit_price)) {
+      toast.error('Selling price must be greater than zero');
+      return;
+    }
+    if (form.mrp !== '' && !isPositiveAmount(form.mrp)) {
+      toast.error('MRP must be greater than zero');
+      return;
+    }
+    if (
+      form.unit_price !== '' && form.mrp !== '' &&
+      Number(form.mrp) < Number(form.unit_price)
+    ) {
+      toast.error('MRP cannot be lower than the selling price');
       return;
     }
 

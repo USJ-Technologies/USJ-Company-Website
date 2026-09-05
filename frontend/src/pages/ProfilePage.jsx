@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import { User, Mail, Phone, Building2, Edit2, LogOut, ShieldCheck, Save, X, AlertTriangle, Trash2, Loader } from 'lucide-react';
 import PartnerApplicationStatus from '../components/partner/PartnerApplicationStatus';
+import toast from 'react-hot-toast';
+import { isPhone, normalizePhone } from '../lib/validation';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -26,9 +28,17 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // The phone saved here is what the quote and checkout forms prefill from,
+    // so an unvalidated value propagates into every later lead.
+    if (formData.phone.trim() && !isPhone(formData.phone)) {
+      toast.error('Enter a 10-digit Indian mobile number, or leave it blank');
+      return;
+    }
+
     const result = await updateProfile({
       name: formData.name.trim() || null,
-      phone: formData.phone.trim() || null,
+      phone: formData.phone.trim() ? normalizePhone(formData.phone) : null,
       organization: formData.organization.trim() || null,
     });
     if (result.success) setIsEditing(false);

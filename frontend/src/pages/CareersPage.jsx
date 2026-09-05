@@ -11,6 +11,7 @@ import Button from '../components/ui/Button';
 import { APP_CONFIG } from '../config/app';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
+import { isEmail, isPhone, isHttpUrl, normalizePhone } from '../lib/validation';
 
 // ── Constants ─────────────────────────────────────────────────
 const TYPE_LABEL = {
@@ -58,10 +59,13 @@ const emptyForm = {
 };
 
 // ── Validation helpers ────────────────────────────────────────
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// Strip all non-digit chars and require exactly 10 digits (Indian mobile)
-const digitsOnly = (s) => s.replace(/\D/g, '');
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+// Was referenced by handleResumeChange but never declared, so picking a
+// resume threw ReferenceError and the file was silently never validated.
+// PDF-only, matching validateApplyForm — the old inline message claimed
+// DOC/DOCX were accepted while the submit check rejected them.
+const ALLOWED_EXTS = ['.pdf'];
 
 function validateApplyForm(form, resumeFile) {
   const e = {};
@@ -72,17 +76,17 @@ function validateApplyForm(form, resumeFile) {
 
   // Email: required, valid format
   if (!form.email.trim()) e.email = 'Email address is required';
-  else if (!EMAIL_RE.test(form.email.trim())) e.email = 'Please enter a valid email address';
+  else if (!isEmail(form.email)) e.email = 'Please enter a valid email address';
 
-  // Phone: optional, but if filled must be exactly 10 digits
-  if (form.phone.trim()) {
-    const d = digitsOnly(form.phone.trim());
-    if (d.length !== 10) e.phone = 'Phone number must be exactly 10 digits';
+  // Phone: optional, but if filled must be a real Indian mobile. The old check
+  // counted digits only, so 1234567890 passed and +91 98765 43210 failed.
+  if (form.phone.trim() && !isPhone(form.phone)) {
+    e.phone = 'Enter a 10-digit Indian mobile number starting 6-9';
   }
 
-  // LinkedIn: optional, must start with http if provided
-  if (form.linkedin_url.trim() && !form.linkedin_url.trim().startsWith('http'))
-    e.linkedin_url = 'LinkedIn URL must start with https://';
+  // LinkedIn: optional. startsWith('http') also accepted "httpfoo".
+  if (form.linkedin_url.trim() && !isHttpUrl(form.linkedin_url))
+    e.linkedin_url = 'Enter a full URL, e.g. https://linkedin.com/in/yourname';
 
   // Resume: optional, but if provided must be PDF only, max 5 MB
   if (resumeFile) {
@@ -127,7 +131,7 @@ function JobDrawer({ job, onClose }) {
     if (file) {
       const ext = '.' + file.name.split('.').pop().toLowerCase();
       let err;
-      if (!ALLOWED_EXTS.includes(ext)) err = 'Only PDF, DOC, or DOCX files are accepted';
+      if (!ALLOWED_EXTS.includes(ext)) err = 'Only PDF files are accepted (DOC/DOCX not supported)';
       else if (file.size > MAX_FILE_BYTES) err = `File too large — max 5 MB (your file is ${(file.size / 1024 / 1024).toFixed(1)} MB)`;
       setErrors((e) => ({ ...e, resume: err }));
     } else {
@@ -172,7 +176,7 @@ function JobDrawer({ job, onClose }) {
       job_title: job.title,
       name: form.name.trim(),
       email: form.email.trim().toLowerCase(),
-      phone: form.phone.trim() ? digitsOnly(form.phone.trim()) : null,
+      phone: form.phone.trim() ? normalizePhone(form.phone) : null,
       linkedin_url: form.linkedin_url.trim() || null,
       resume_url: resumeUrl,
       cover_note: form.cover_note.trim() || null,

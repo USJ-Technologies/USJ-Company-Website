@@ -3,7 +3,7 @@ import { X, User, Phone, ShoppingCart } from 'lucide-react';
 import useContactStore from '../../store/contactStore';
 import useAuthStore from '../../store/authStore';
 
-const PHONE_REGEX = /^[6-9]\d{9}$/;
+import { isPhone, normalizePhone } from '../../lib/validation';
 
 export default function ContactCaptureModal() {
   const { isModalOpen, pendingProduct, closeModal, submitContact } = useContactStore();
@@ -38,7 +38,9 @@ export default function ContactCaptureModal() {
     if (!name.trim()) newErrors.name = 'Name is required';
     if (!phone.trim()) {
       newErrors.phone = 'Phone number is required';
-    } else if (!PHONE_REGEX.test(phone.trim())) {
+      // isPhone strips +91, a leading 0, spaces and dashes first — the bare
+      // regex rejected "+91 98765 43210", which is how many people type it.
+    } else if (!isPhone(phone)) {
       newErrors.phone = 'Enter a valid 10-digit Indian mobile number';
     }
     setErrors(newErrors);
@@ -49,7 +51,7 @@ export default function ContactCaptureModal() {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
-    await submitContact({ name: name.trim(), phone: phone.trim() });
+    await submitContact({ name: name.trim(), phone: normalizePhone(phone) });
     setSubmitting(false);
   };
 

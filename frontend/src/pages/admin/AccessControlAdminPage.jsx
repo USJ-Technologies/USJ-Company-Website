@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Shield, Plus, Trash2, X, Edit2, Save, UserCheck, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useAuthStore from '../../store/authStore';
+import { isEmail } from '../../lib/validation';
 
 const ROLE_OPTIONS = [
   { value: 'admin',   label: 'Admin',   description: 'Full access — all admin pages including this one', color: '#1A56DB' },
@@ -43,7 +44,10 @@ export default function AccessControlAdminPage() {
   };
 
   const handleSaveInvitation = async () => {
+    // A malformed address here silently creates an invited_roles row that no
+    // signup will ever match, so the person never gets the role.
     if (!form.email.trim()) { toast.error('Email is required'); return; }
+    if (!isEmail(form.email)) { toast.error('Enter a valid email address'); return; }
     setSaving(true);
 
     const email = form.email.trim().toLowerCase();

@@ -9,6 +9,10 @@ import {
   needsAuthorizationDocs,
   fetchPartnerCategories,
 } from '../lib/partnerCatalog';
+import {
+  isEmail, isPhone, isGstin, isPan, isIfsc, isBankAccount,
+  gstinMatchesPan, normalizePhone,
+} from '../lib/validation';
 
 const STEPS = [
   { id: 0, label: 'Business' },
@@ -19,35 +23,9 @@ const STEPS = [
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 
-// A GSTIN is 15 ALPHANUMERIC characters, not 15 digits:
-//   22AAAAA0000A1Z5
-//   \/ \________/\/\/
-//    |      |     | └─ 'Z' (fixed), then a checksum char
-//    |      |     └─── entity number, 1-9 or A-Z
-//    |      └───────── the holder's 10-character PAN
-//    └──────────────── 2-digit state code
-const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
-const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
-
 // Typed in uppercase whatever the user does, so a lowercase paste of a
 // perfectly valid GSTIN or PAN is not rejected.
 const UPPERCASE_FIELDS = new Set(['gstNumber', 'panNumber', 'bankIfscCode']);
-
-// Indian mobile numbers are 10 digits starting 6-9. People paste them with
-// +91, a leading 0, spaces or dashes; all of that is stripped before checking
-// so a valid number is never rejected over formatting.
-const normalizePhone = (v) =>
-  String(v ?? '')
-    .replace(/[\s\-()]/g, '')
-    .replace(/^\+?91/, '')
-    .replace(/^0/, '');
-
-const PHONE_RE = /^[6-9]\d{9}$/;
-// Bank account numbers in India run 9-18 digits depending on the bank.
-const BANK_ACCOUNT_RE = /^\d{9,18}$/;
-// 4-letter bank code, a fixed 0, then a 6-character branch code.
-const IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 
 // Upper bounds are sanity checks, not business rules: they only catch a
 // mistyped figure, e.g. a phone number pasted into the SKU box.
@@ -136,22 +114,19 @@ const BecomeSellerPage = () => {
       else if (form.businessName.trim().length < 3) {
         e.businessName = 'Business name must be at least 3 characters';
       }
-      const gst = form.gstNumber.replace(/\s/g, '').toUpperCase();
-      const pan = form.panNumber.replace(/\s/g, '').toUpperCase();
-
-      if (!gst) e.gstNumber = 'GST number is required';
-      else if (!GSTIN_RE.test(gst)) {
+      if (!form.gstNumber.trim()) e.gstNumber = 'GST number is required';
+      else if (!isGstin(form.gstNumber)) {
         e.gstNumber = 'Invalid GSTIN (e.g., 22AAAAA0000A1Z5)';
       }
 
-      if (!pan) e.panNumber = 'PAN is required';
-      else if (!PAN_RE.test(pan)) {
+      if (!form.panNumber.trim()) e.panNumber = 'PAN is required';
+      else if (!isPan(form.panNumber)) {
         e.panNumber = 'Invalid PAN format (e.g., AAAAA0000A)';
       }
 
       // Characters 3-12 of a GSTIN are the holder's PAN. Checking that the two
       // agree catches a transposed digit that both formats accept on their own.
-      if (!e.gstNumber && !e.panNumber && gst.slice(2, 12) !== pan) {
+      if (!e.gstNumber && !e.panNumber && !gstinMatchesPan(form.gstNumber, form.panNumber)) {
         e.gstNumber = "GSTIN doesn't match the PAN below — characters 3–12 should be the PAN";
       }
       if (!form.contactPerson.trim()) e.contactPerson = 'Contact person name is required';
@@ -160,12 +135,12 @@ const BecomeSellerPage = () => {
       }
 
       if (!form.contactPhone.trim()) e.contactPhone = 'Phone is required';
-      else if (!PHONE_RE.test(normalizePhone(form.contactPhone))) {
+      else if (!isPhone(form.contactPhone)) {
         e.contactPhone = 'Enter a 10-digit Indian mobile number starting 6-9';
       }
 
       if (!form.contactEmail.trim()) e.contactEmail = 'Email is required';
-      else if (!EMAIL_RE.test(form.contactEmail.trim())) {
+      else if (!isEmail(form.contactEmail)) {
         e.contactEmail = 'Invalid email format';
       }
       if (needsAccount) {
@@ -222,14 +197,13 @@ const BecomeSellerPage = () => {
     }
 
     if (which === 2) {
-      const account = form.bankAccountNumber.replace(/[\s-]/g, '');
-      if (!account) e.bankAccountNumber = 'Bank account number is required';
-      else if (!BANK_ACCOUNT_RE.test(account)) {
+      if (!form.bankAccountNumber.trim()) e.bankAccountNumber = 'Bank account number is required';
+      else if (!isBankAccount(form.bankAccountNumber)) {
         e.bankAccountNumber = 'Account number must be 9-18 digits';
       }
 
       if (!form.bankIfscCode.trim()) e.bankIfscCode = 'IFSC code is required';
-      else if (!IFSC_RE.test(form.bankIfscCode.trim().toUpperCase())) {
+      else if (!isIfsc(form.bankIfscCode)) {
         e.bankIfscCode = 'Invalid IFSC format (e.g., SBIN0001234)';
       }
       if (!agreedToTerms) e.agreedToTerms = 'You must agree to the seller terms and agreement';
