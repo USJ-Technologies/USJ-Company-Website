@@ -18,6 +18,7 @@ import {
 import toast from 'react-hot-toast';
 import useAuthStore from '../../store/authStore';
 import Skeleton from '../../components/ui/Skeleton';
+import { businessTypeLabel, fetchPartnerCategoryLinks } from '../../lib/partnerCatalog';
 
 const BADGE_COLOR = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -37,11 +38,36 @@ export default function PartnersAdminPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [reviewNotes, setReviewNotes] = useState('');
+  const [partnerCategories, setPartnerCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
   const canManagePartners = useAuthStore((s) => s.hasRole('admin', 'manager'));
 
   useEffect(() => {
     if (canManagePartners) fetchPartners();
   }, [canManagePartners]);
+
+  // Registered segments live in a join table, so they're fetched when a
+  // partner is opened rather than with the list. Driven from the click
+  // handler rather than an effect: the modal is the only thing that needs
+  // them, and it keeps the fetch out of the render cycle.
+  const openPartner = async (partner) => {
+    setSelectedPartner(partner);
+    setShowDetailModal(true);
+    setPartnerCategories([]);
+    setCategoriesLoading(true);
+    try {
+      setPartnerCategories(await fetchPartnerCategoryLinks(partner.id));
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  const closeDetail = () => {
+    setShowDetailModal(false);
+    setSelectedPartner(null);
+    setPartnerCategories([]);
+    setReviewNotes('');
+  };
 
   const fetchPartners = async () => {
     setLoading(true);
@@ -251,10 +277,7 @@ export default function PartnersAdminPage() {
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => {
-                      setSelectedPartner(partner);
-                      setShowDetailModal(true);
-                    }}
+                    onClick={() => openPartner(partner)}
                     className="p-2 text-[#718096] hover:text-[#0A1628] hover:bg-[#F7FAFC] rounded-[6px] transition-colors"
                   >
                     <Eye size={16} />
@@ -272,14 +295,7 @@ export default function PartnersAdminPage() {
           <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-[#E2E8F0] p-6 flex items-center justify-between">
               <h2 className="text-lg font-bold text-[#0A1628]">{selectedPartner.business_name}</h2>
-              <button
-                onClick={() => {
-                  setShowDetailModal(false);
-                  setSelectedPartner(null);
-                  setReviewNotes('');
-                }}
-                className="text-[#718096] hover:text-[#0A1628]"
-              >
+              <button onClick={closeDetail} className="text-[#718096] hover:text-[#0A1628]">
                 ✕
               </button>
             </div>
@@ -333,6 +349,106 @@ export default function PartnersAdminPage() {
                     <p className="text-[#0A1628]">{selectedPartner.contact_info?.email}</p>
                   </div>
                 </div>
+              </div>
+
+              {/* What They Sell */}
+              <div>
+                <h3 className="text-sm font-bold text-[#0A1628] mb-3 uppercase tracking-wider">
+                  What They Sell
+                </h3>
+
+                {/* Applications submitted before this section existed have
+                    none of these fields — say so rather than render blanks. */}
+                {!selectedPartner.business_type &&
+                partnerCategories.length === 0 &&
+                !categoriesLoading ? (
+                  <p className="text-xs text-[#718096]">
+                    This application predates catalog details.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-xs font-semibold text-[#718096]">Business Type</p>
+                        <p className="text-[#0A1628]">
+                          {businessTypeLabel(selectedPartner.business_type) ?? '—'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-[#718096]">Scale</p>
+                        <p className="text-[#0A1628]">
+                          {selectedPartner.sku_count != null
+                            ? `${selectedPartner.sku_count.toLocaleString('en-IN')} SKUs`
+                            : '—'}
+                          {selectedPartner.monthly_capacity != null &&
+                            ` · ${selectedPartner.monthly_capacity.toLocaleString('en-IN')} units/mo`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold text-[#718096] mb-1.5">Categories</p>
+                      {categoriesLoading ? (
+                        <p className="text-xs text-[#718096]">Loading…</p>
+                      ) : partnerCategories.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {partnerCategories.map((c) => (
+                            <span
+                              key={c.id}
+                              className="px-2 py-0.5 text-xs font-semibold bg-[#F7FAFC] border border-[#E2E8F0] rounded-full text-[#0A1628]"
+                            >
+                              {c.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-[#718096]">None registered</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold text-[#718096] mb-1.5">Brands Carried</p>
+                      {selectedPartner.brands_carried?.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedPartner.brands_carried.map((b, i) => (
+                            <span
+                              key={`${b}-${i}`}
+                              className="px-2 py-0.5 text-xs font-semibold bg-[#FDFBF5] border border-[#C9A84C]/40 rounded-full text-[#0A1628]"
+                            >
+                              {b}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-[#718096]">None listed</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold text-[#718096] mb-1.5">
+                        Authorization Documents
+                      </p>
+                      {selectedPartner.authorization_doc_urls?.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedPartner.authorization_doc_urls.map((url, i) => (
+                            <a
+                              key={i}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm text-[#0A56DB] hover:underline"
+                            >
+                              <FileText size={14} />
+                              Authorization Document {i + 1}
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-[#718096]">None uploaded</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Storefront Description */}
